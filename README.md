@@ -1,46 +1,38 @@
-# Lite Light
+# LiteLight Lightbox
 
-A lightweight, elegant javascript lightbox utility for modern web applications. Features smooth animations, mobile swipe support, keyboard navigation, and zero dependencies.
+A lightweight, elegant JavaScript lightbox for modern web applications. Zero dependencies, mobile-first design with touch/swipe support and keyboard navigation.
 
 ## Features
 
-- **Lightweight** - Minimal footprint with no dependencies
-- **Mobile-first** - Touch/swipe navigation for mobile devices
+- **Lightweight** - Under 10KB total with no dependencies
+- **Mobile-first** - Touch/swipe navigation 
 - **Keyboard navigation** - Arrow keys and ESC support
-- **Smooth animations** - Elegant fade transitions between images
-- **Customizable** - Easy to configure and style
+- **Smooth animations** - Elegant fade transitions
 - **Modern ES6** - Uses modern JavaScript features
-- **Accessible** - Proper focus management and keyboard support
 
 ## Quick Start
 
-1. **Include the CSS and JS files:**
+1. **Include the files:**
 
 ```html
 <link rel="stylesheet" href="lite-light.css">
 <script type="module" src="lite-light.js"></script>
 ```
 
-2. **Add the data attribute to your images:**
+2. **Add data attributes to images:**
 
 ```html
-<img src="thumbnail.jpg" 
-     data-lightbox="full-size.jpg" 
-     alt="Beautiful landscape">
+<img src="thumbnail.jpg" data-lightbox="full-size.jpg" alt="Beautiful landscape">
 ```
 
-3. **Initialize Lite Light:**
+3. **Initialize:**
 
 ```javascript
 import { init } from './lite-light.js';
-
-// Simple initialization
 init();
 ```
 
-## Usage Examples
-
-### Basic Implementation
+## Example
 
 ```html
 <!DOCTYPE html>
@@ -61,136 +53,30 @@ init();
 </html>
 ```
 
-### Custom Configuration
+## Configuration
 
 ```javascript
-import { init } from './lite-light.js';
-
 init({
-    imageSelector: 'img[data-gallery]',
-    imageUrlAttribute: 'data-gallery',
-    lightboxClass: 'my-lightbox',
-    swipeThreshold: 75,
-    fadeAnimationDuration: 200
+    imageSelector: 'img[data-gallery]',     // CSS selector for images
+    imageUrlAttribute: 'data-gallery',      // Attribute with full-size URL
+    swipeThreshold: 75,                     // Swipe distance to navigate
+    fadeAnimationDuration: 200              // Animation duration (ms)
 });
 ```
 
-### Integration with Modern Frameworks
+## Navigation
 
-#### React Example
-
-```jsx
-import { useEffect } from 'react';
-import { init } from './lite-light.js';
-import './lite-light.css';
-
-function Gallery({ images }) {
-    useEffect(() => {
-        init();
-    }, []);
-
-    return (
-        <div className="gallery">
-            {images.map((image, index) => (
-                <img
-                    key={index}
-                    src={image.thumbnail}
-                    data-lightbox={image.fullSize}
-                    alt={image.alt}
-                />
-            ))}
-        </div>
-    );
-}
-```
-
-#### Vue Example
-
-```vue
-<template>
-    <div class="gallery">
-        <img
-            v-for="(image, index) in images"
-            :key="index"
-            :src="image.thumbnail"
-            :data-lightbox="image.fullSize"
-            :alt="image.alt"
-        />
-    </div>
-</template>
-
-<script>
-import { init } from './lite-light.js';
-import './lite-light.css';
-
-export default {
-    mounted() {
-        init();
-    }
-}
-</script>
-```
-
-## Configuration Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `imageSelector` | string | `'img[data-lightbox]'` | CSS selector for lightbox images |
-| `imageUrlAttribute` | string | `'data-lightbox'` | Attribute containing full-size image URL |
-| `lightboxClass` | string | `'lite-light'` | CSS class for the lightbox container |
-| `swipeThreshold` | number | `50` | Minimum swipe distance (px) to trigger navigation |
-| `fadeAnimationDuration` | number | `150` | Animation duration in milliseconds |
-
-## Navigation Controls
-
-### Desktop
-- **Left/Right Arrow Keys**: Navigate between images
-- **ESC Key**: Close lightbox
-- **Click outside image**: Close lightbox
-- **Click navigation arrows**: Previous/next image
-
-### Mobile
-- **Swipe left/right**: Navigate between images
-- **Tap outside image**: Close lightbox
-- **Tap X button**: Close lightbox
+**Desktop:** Arrow keys, ESC to close, click outside to close  
+**Mobile:** Swipe left/right, tap outside to close
 
 ## Browser Support
 
-- Chrome 61+
-- Firefox 60+
-- Safari 10.1+
-- Edge 79+
-
-## Styling Customization
-
-Override CSS variables or classes to customize the appearance:
-
-```css
-.lite-light {
-    --background-color: rgba(0, 0, 0, 0.9);
-    --animation-duration: 0.2s;
-}
-
-.lite-light img {
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-```
-
-## File Structure
-
-```
-lite-light/
-├── lite-light.js          # Main JavaScript module
-├── lite-light.css         # Styles and animations
-├── example.html           # Working example
-└── README.md             # Documentation
-```
+Chrome 61+, Firefox 60+, Safari 10.1+, Edge 79+
 
 ## License
 
-MIT License - feel free to use in personal and commercial projects.
+MIT License - free for personal and commercial use.
 
 ## Contributing
 
-Contributions welcome! Please feel free to submit issues and enhancement requests.
+Issues and pull requests welcome at [GitHub](https://github.com/byronj/lite-light).

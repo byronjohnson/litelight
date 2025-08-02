@@ -1,0 +1,41 @@
+{
+    "name": "lite-light",
+    "version": "1.0.0",
+    "description": "A lightweight, elegant lightbox utility for modern web applications",
+    "main": "dist/lite-light.umd.min.js",
+    "module": "dist/lite-light.min.js",
+    "type": "module",
+    "files": [
+      "dist",
+      "lite-light.js",
+      "lite-light.css",
+      "README.md"
+    ],
+    "exports": {
+      ".": {
+        "import": "./dist/lite-light.min.js",
+        "require": "./dist/lite-light.umd.min.js"
+      },
+      "./css": "./dist/lite-light.min.css"
+    },
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "dev": "vite build --watch",
+      "build": "vite build",
+      "clean": "rm -rf dist"
+    },
+    "keywords": [
+      "lightbox",
+      "gallery",
+      "images",
+      "modal",
+      "vanilla-js",
+      "lightweight",
+      "mobile-friendly"
+    ],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+      "vite": "^6.3.5"
+    }
+  }

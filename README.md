@@ -10,6 +10,10 @@ A lightweight, elegant JavaScript lightbox for modern web applications. Zero dep
 - **Smooth animations** - Elegant fade transitions
 - **Modern ES6** - Uses modern JavaScript features
 
+## Demo
+
+See LiteLight in action: [https://litelightbox.com/](https://litelightbox.com/)
+
 ## Quick Start
 
 1. **Include the files:**

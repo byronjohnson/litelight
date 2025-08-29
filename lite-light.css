@@ -176,16 +176,3 @@
   }
 }
 
-.description {
-  font-size: 15px;
-  font-weight: 400;
-  color: #ffb152;
-  text-align: center;
-  margin-top: 0;
-  margin-bottom: 2rem;
-  opacity: 0.9;
-  letter-spacing: 0.5px;
-  position: relative;
-  text-transform: uppercase;
-  z-index: 2;
-}

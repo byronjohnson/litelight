@@ -5,6 +5,10 @@ const preloadedImages = {};
 // Mobile swipe detection variables
 let touchStartX = 0;
 let touchEndX = 0;
+let touchStartY = 0;
+let touchEndY = 0;
+let initialTouchDistance = 0;
+let isZooming = false;
 
 // Function to preload an image
 function preloadImage(url) {
@@ -102,19 +106,66 @@ export function initLiteLight(options = {}) {
     }
     
     // Touch event handlers
+    function getTouchDistance(touches) {
+      if (touches.length < 2) return 0;
+      
+      const touch1 = touches[0];
+      const touch2 = touches[1];
+      
+      return Math.sqrt(
+        Math.pow(touch2.screenX - touch1.screenX, 2) + 
+        Math.pow(touch2.screenY - touch1.screenY, 2)
+      );
+    }
+    
     function handleTouchStart(e) {
-      touchStartX = e.changedTouches[0].screenX;
+      if (e.touches.length === 1) {
+        // Single touch - potential swipe
+        touchStartX = e.touches[0].screenX;
+        touchStartY = e.touches[0].screenY;
+        isZooming = false;
+      } else if (e.touches.length === 2) {
+        // Multi-touch - pinch gesture
+        initialTouchDistance = getTouchDistance(e.touches);
+        isZooming = true;
+      }
+    }
+    
+    function handleTouchMove(e) {
+      if (e.touches.length === 2) {
+        // Continue tracking pinch gesture
+        isZooming = true;
+        const currentDistance = getTouchDistance(e.touches);
+        
+        // If there's significant distance change, it's definitely a zoom
+        if (Math.abs(currentDistance - initialTouchDistance) > 50) {
+          isZooming = true;
+        }
+      }
     }
     
     function handleTouchEnd(e) {
-      touchEndX = e.changedTouches[0].screenX;
-      const swipeDistance = touchEndX - touchStartX;
+      // Only process swipe if it was a single touch and not a zoom gesture
+      if (e.changedTouches.length === 1 && !isZooming && e.touches.length === 0) {
+        touchEndX = e.changedTouches[0].screenX;
+        touchEndY = e.changedTouches[0].screenY;
+        
+        const swipeDistanceX = touchEndX - touchStartX;
+        const swipeDistanceY = touchEndY - touchStartY;
+        
+        // Check if horizontal swipe is more significant than vertical
+        if (Math.abs(swipeDistanceX) > Math.abs(swipeDistanceY) && 
+            Math.abs(swipeDistanceX) > config.swipeThreshold) {
+          // Navigate based on swipe direction
+          navigateToImage(swipeDistanceX > 0 ? currentIndex - 1 : currentIndex + 1);
+          e.stopPropagation(); // Prevent lightbox from closing
+        }
+      }
       
-      // If the swipe distance is significant enough
-      if (Math.abs(swipeDistance) > config.swipeThreshold) {
-        // Navigate based on swipe direction
-        navigateToImage(swipeDistance > 0 ? currentIndex - 1 : currentIndex + 1);
-        e.stopPropagation(); // Prevent lightbox from closing
+      // Reset zoom state when all touches are lifted
+      if (e.touches.length === 0) {
+        isZooming = false;
+        initialTouchDistance = 0;
       }
     }
     
@@ -155,8 +206,10 @@ export function initLiteLight(options = {}) {
     
     // Set up touch events for mobile
     lightbox.removeEventListener('touchstart', handleTouchStart);
+    lightbox.removeEventListener('touchmove', handleTouchMove);
     lightbox.removeEventListener('touchend', handleTouchEnd);
     lightbox.addEventListener('touchstart', handleTouchStart);
+    lightbox.addEventListener('touchmove', handleTouchMove);
     lightbox.addEventListener('touchend', handleTouchEnd);
     
     // Set up keyboard navigation

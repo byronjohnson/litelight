@@ -1,16 +1,41 @@
-// Lite Light - A lightweight, elegant lightbox utility
+// LiteLight - A lightweight, elegant lightbox utility
+// Version: 1.0.1
+// Author: Byron Johnson
+// License: MIT
+
+// Version constant for programmatic access
+const VERSION = '1.0.1';
+
 // Preloaded images cache
 const preloadedImages = {};
 
-// Mobile swipe detection variables
-let touchStartX = 0;
-let touchEndX = 0;
-let touchStartY = 0;
-let touchEndY = 0;
-let initialTouchDistance = 0;
-let isZooming = false;
+// Touch and zoom state variables
+let touchState = {
+  startX: 0,
+  startY: 0,
+  endX: 0,
+  endY: 0,
+  initialDistance: 0,
+  isZooming: false,
+  lastCenterX: 0,
+  lastCenterY: 0
+};
 
-// Function to preload an image
+let zoomState = {
+  scale: 1,
+  x: 0,
+  y: 0,
+  initialScale: 1,
+  initialX: 0,
+  initialY: 0
+};
+
+// Constants for performance
+const ZOOM_TOLERANCE = 0.01;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 5;
+
+// Utility functions
 function preloadImage(url) {
   if (!preloadedImages[url]) {
     preloadedImages[url] = new Image();
@@ -19,7 +44,6 @@ function preloadImage(url) {
   return preloadedImages[url];
 }
 
-// Helper functions to control background scrolling
 function disableBodyScroll() {
   const scrollY = window.scrollY;
   document.body.style.position = 'fixed';
@@ -35,6 +59,46 @@ function enableBodyScroll() {
   document.body.style.width = '';
   document.body.style.overflowY = '';
   window.scrollTo(0, parseInt(scrollY || '0') * -1);
+}
+
+function getTouchDistance(touches) {
+  if (touches.length < 2) return 0;
+
+  const touch1 = touches[0];
+  const touch2 = touches[1];
+
+  return Math.sqrt(
+    Math.pow(touch2.screenX - touch1.screenX, 2) +
+    Math.pow(touch2.screenY - touch1.screenY, 2)
+  );
+}
+
+function getTouchCenter(touches) {
+  if (touches.length < 2) return { x: touches[0].screenX, y: touches[0].screenY };
+
+  const touch1 = touches[0];
+  const touch2 = touches[1];
+
+  return {
+    x: (touch1.screenX + touch2.screenX) / 2,
+    y: (touch1.screenY + touch2.screenY) / 2
+  };
+}
+
+function applyZoomTransform(imageElement) {
+  imageElement.style.transform = `scale(${zoomState.scale}) translate(${zoomState.x}px, ${zoomState.y}px)`;
+  imageElement.style.transformOrigin = 'center center';
+}
+
+function resetZoom(imageElement) {
+  zoomState.scale = 1;
+  zoomState.x = 0;
+  zoomState.y = 0;
+  applyZoomTransform(imageElement);
+}
+
+function isApproximatelyOne(value) {
+  return Math.abs(value - 1) < ZOOM_TOLERANCE;
 }
 
 // Initialize lightbox functionality
@@ -53,195 +117,241 @@ export function initLiteLight(options = {}) {
     createLightboxHTML(config.lightboxClass);
   }
 
+  // Cache DOM elements
+  const lightbox = document.querySelector(`.${config.lightboxClass}`);
+  const lightboxImage = lightbox.querySelector('img');
+  const prevButton = lightbox.querySelector('.lite-light-prev');
+  const nextButton = lightbox.querySelector('.lite-light-next');
+  const closeButton = lightbox.querySelector('.lite-light-close');
+
   document.addEventListener('click', (e) => {
     // Only proceed if an image with the specified attribute was clicked
     if (e.target.tagName !== 'IMG' || !e.target.hasAttribute(config.imageUrlAttribute)) return;
 
     const images = Array.from(document.querySelectorAll(config.imageSelector));
     let currentIndex = images.findIndex(img => img === e.target);
-    const lightbox = document.querySelector(`.${config.lightboxClass}`);
-    const lightboxImage = lightbox.querySelector('img');
-    
+
     // Function to preload adjacent images
     function preloadAdjacentImages(currentIdx) {
       const prevIdx = (currentIdx - 1 + images.length) % images.length;
       const nextIdx = (currentIdx + 1) % images.length;
-      
+
       // Preload previous and next images
       preloadImage(images[prevIdx].getAttribute(config.imageUrlAttribute));
       preloadImage(images[nextIdx].getAttribute(config.imageUrlAttribute));
     }
-    
+
     // Function to navigate to a specific image with fade animation
     function navigateToImage(index) {
       // Ensure index is within bounds
       currentIndex = (index + images.length) % images.length;
-      
+
       // Get the next image URL
       const nextImageUrl = images[currentIndex].getAttribute(config.imageUrlAttribute);
-      
+
       // Ensure the image is preloaded
       preloadImage(nextImageUrl);
-      
+
       // Apply fade-out, then change source, then fade-in
       lightboxImage.classList.add('lite-light-fade-out');
-      
+
       // Single animation listener that removes itself
       lightboxImage.addEventListener('animationend', function handleFade() {
         // The image should already be preloaded, so this should be instant
         lightboxImage.src = nextImageUrl;
+        resetZoom(lightboxImage); // Reset zoom when changing images
         lightboxImage.classList.remove('lite-light-fade-out');
         lightboxImage.classList.add('lite-light-fade-in');
-        
+
         // Preload the next set of images in the background
         preloadAdjacentImages(currentIndex);
-        
+
         // Clean up after fade-in completes
         lightboxImage.addEventListener('animationend', function() {
           lightboxImage.classList.remove('lite-light-fade-in');
         }, { once: true });
-        
+
         lightboxImage.removeEventListener('animationend', handleFade);
       }, { once: true });
     }
     
-    // Touch event handlers
-    function getTouchDistance(touches) {
-      if (touches.length < 2) return 0;
-      
-      const touch1 = touches[0];
-      const touch2 = touches[1];
-      
-      return Math.sqrt(
-        Math.pow(touch2.screenX - touch1.screenX, 2) + 
-        Math.pow(touch2.screenY - touch1.screenY, 2)
-      );
-    }
-    
+    // Optimized touch event handlers
     function handleTouchStart(e) {
-      if (e.touches.length === 1) {
-        // Single touch - potential swipe
-        touchStartX = e.touches[0].screenX;
-        touchStartY = e.touches[0].screenY;
-        isZooming = false;
-      } else if (e.touches.length === 2) {
+      const touches = e.touches;
+
+      if (touches.length === 1) {
+        // Single touch - potential swipe or pan
+        const touch = touches[0];
+        touchState.startX = touch.screenX;
+        touchState.startY = touch.screenY;
+        touchState.lastCenterX = touch.screenX;
+        touchState.lastCenterY = touch.screenY;
+        touchState.isZooming = false;
+
+        // Store initial zoom state
+        zoomState.initialScale = zoomState.scale;
+        zoomState.initialX = zoomState.x;
+        zoomState.initialY = zoomState.y;
+      } else if (touches.length === 2) {
         // Multi-touch - pinch gesture
-        initialTouchDistance = getTouchDistance(e.touches);
-        isZooming = true;
+        touchState.initialDistance = getTouchDistance(touches);
+        const center = getTouchCenter(touches);
+        touchState.lastCenterX = center.x;
+        touchState.lastCenterY = center.y;
+
+        // Store initial zoom state
+        zoomState.initialScale = zoomState.scale;
+        zoomState.initialX = zoomState.x;
+        zoomState.initialY = zoomState.y;
+        touchState.isZooming = true;
       }
     }
-    
+
     function handleTouchMove(e) {
-      if (e.touches.length === 2) {
-        // Continue tracking pinch gesture
-        isZooming = true;
-        const currentDistance = getTouchDistance(e.touches);
-        
-        // If there's significant distance change, it's definitely a zoom
-        if (Math.abs(currentDistance - initialTouchDistance) > 50) {
-          isZooming = true;
+      const touches = e.touches;
+
+      if (touches.length === 2) {
+        // Pinch-to-zoom
+        const currentDistance = getTouchDistance(touches);
+        const center = getTouchCenter(touches);
+
+        if (touchState.initialDistance > 0) {
+          const scaleChange = currentDistance / touchState.initialDistance;
+          zoomState.scale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomState.initialScale * scaleChange));
+
+          // Reset position when zoomed out to approximately 1x scale
+          if (isApproximatelyOne(zoomState.scale)) {
+            zoomState.x = 0;
+            zoomState.y = 0;
+          } else {
+            // Pan based on center movement
+            const deltaX = center.x - touchState.lastCenterX;
+            const deltaY = center.y - touchState.lastCenterY;
+
+            if (zoomState.scale > MIN_ZOOM) {
+              zoomState.x = zoomState.initialX + deltaX / zoomState.scale;
+              zoomState.y = zoomState.initialY + deltaY / zoomState.scale;
+            }
+          }
+
+          applyZoomTransform(lightboxImage);
         }
+
+        touchState.lastCenterX = center.x;
+        touchState.lastCenterY = center.y;
+        touchState.isZooming = true;
+      } else if (touches.length === 1 && zoomState.scale > MIN_ZOOM) {
+        // Single touch pan when zoomed
+        const touch = touches[0];
+        const deltaX = touch.screenX - touchState.lastCenterX;
+        const deltaY = touch.screenY - touchState.lastCenterY;
+
+        zoomState.x += deltaX / zoomState.scale;
+        zoomState.y += deltaY / zoomState.scale;
+
+        applyZoomTransform(lightboxImage);
+
+        touchState.lastCenterX = touch.screenX;
+        touchState.lastCenterY = touch.screenY;
+        touchState.isZooming = true; // Prevent navigation during pan
       }
     }
-    
+
     function handleTouchEnd(e) {
       // Only process swipe if it was a single touch and not a zoom gesture
-      if (e.changedTouches.length === 1 && !isZooming && e.touches.length === 0) {
-        touchEndX = e.changedTouches[0].screenX;
-        touchEndY = e.changedTouches[0].screenY;
-        
-        const swipeDistanceX = touchEndX - touchStartX;
-        const swipeDistanceY = touchEndY - touchStartY;
-        
+      if (e.changedTouches.length === 1 && !touchState.isZooming && e.touches.length === 0 && isApproximatelyOne(zoomState.scale)) {
+        const touch = e.changedTouches[0];
+        touchState.endX = touch.screenX;
+        touchState.endY = touch.screenY;
+
+        const swipeDistanceX = touchState.endX - touchState.startX;
+        const swipeDistanceY = touchState.endY - touchState.startY;
+
         // Check if horizontal swipe is more significant than vertical
-        if (Math.abs(swipeDistanceX) > Math.abs(swipeDistanceY) && 
+        if (Math.abs(swipeDistanceX) > Math.abs(swipeDistanceY) &&
             Math.abs(swipeDistanceX) > config.swipeThreshold) {
           // Navigate based on swipe direction
           navigateToImage(swipeDistanceX > 0 ? currentIndex - 1 : currentIndex + 1);
           e.stopPropagation(); // Prevent lightbox from closing
         }
       }
-      
+
       // Reset zoom state when all touches are lifted
       if (e.touches.length === 0) {
-        isZooming = false;
-        initialTouchDistance = 0;
+        touchState.isZooming = false;
+        touchState.initialDistance = 0;
       }
     }
     
-    // Keyboard event handler for arrow keys
+    // Optimized keyboard event handler
     function handleKeyboardNav(e) {
-      if (e.key === 'ArrowLeft') {
-        // Left arrow - previous image
-        navigateToImage(currentIndex - 1);
-        e.preventDefault();
-      } else if (e.key === 'ArrowRight') {
-        // Right arrow - next image
-        navigateToImage(currentIndex + 1);
-        e.preventDefault();
-      } else if (e.key === 'Escape') {
-        // ESC key - close lightbox
-        closeLightbox();
-        e.preventDefault();
+      switch (e.key) {
+        case 'ArrowLeft':
+          navigateToImage(currentIndex - 1);
+          e.preventDefault();
+          break;
+        case 'ArrowRight':
+          navigateToImage(currentIndex + 1);
+          e.preventDefault();
+          break;
+        case 'Escape':
+          closeLightbox();
+          e.preventDefault();
+          break;
       }
     }
-    
+
+    // Optimized close lightbox function
+    function closeLightbox() {
+      lightbox.style.display = 'none';
+      enableBodyScroll();
+      document.removeEventListener('keydown', handleKeyboardNav);
+    }
+
+    // Optimized navigation handlers
+    function createNavigationHandler(direction) {
+      return (e) => {
+        e.stopPropagation();
+        navigateToImage(currentIndex + direction);
+      };
+    }
+
     // Show lightbox and set initial image
     lightbox.style.display = 'flex';
-    
+
     // Preload the initial image and its adjacent images
     preloadImage(images[currentIndex].getAttribute(config.imageUrlAttribute));
     preloadAdjacentImages(currentIndex);
-    
+
     lightboxImage.src = images[currentIndex].getAttribute(config.imageUrlAttribute);
+    resetZoom(lightboxImage); // Reset zoom for initial image
     lightboxImage.classList.add('lite-light-fade-in');
-    
+
     // Disable scrolling on background
     disableBodyScroll();
-    
+
     // Remove fade-in class after animation completes
     lightboxImage.addEventListener('animationend', () => {
       lightboxImage.classList.remove('lite-light-fade-in');
     }, { once: true });
-    
-    // Set up touch events for mobile
-    lightbox.removeEventListener('touchstart', handleTouchStart);
-    lightbox.removeEventListener('touchmove', handleTouchMove);
-    lightbox.removeEventListener('touchend', handleTouchEnd);
-    lightbox.addEventListener('touchstart', handleTouchStart);
-    lightbox.addEventListener('touchmove', handleTouchMove);
-    lightbox.addEventListener('touchend', handleTouchEnd);
-    
-    // Set up keyboard navigation
-    document.removeEventListener('keydown', handleKeyboardNav);
+
+    // Set up event listeners efficiently
+    lightbox.addEventListener('touchstart', handleTouchStart, { passive: true });
+    lightbox.addEventListener('touchmove', handleTouchMove, { passive: true });
+    lightbox.addEventListener('touchend', handleTouchEnd, { passive: true });
+
     document.addEventListener('keydown', handleKeyboardNav);
-    
-    // Set up navigation controls
-    lightbox.querySelector('.lite-light-prev').onclick = (e) => {
-      e.stopPropagation();
-      navigateToImage(currentIndex - 1);
-    };
-    
-    lightbox.querySelector('.lite-light-next').onclick = (e) => {
-      e.stopPropagation();
-      navigateToImage(currentIndex + 1);
-    };
-    
-    // Close lightbox and remove keyboard event listener
-    function closeLightbox() {
-      lightbox.style.display = 'none';
-      enableBodyScroll(); // Re-enable scrolling
-      document.removeEventListener('keydown', handleKeyboardNav);
-    }
-    
-    lightbox.querySelector('.lite-light-close').onclick = (e) => {
+
+    // Set up navigation controls with optimized handlers
+    prevButton.addEventListener('click', createNavigationHandler(-1));
+    nextButton.addEventListener('click', createNavigationHandler(1));
+    closeButton.addEventListener('click', (e) => {
       e.stopPropagation();
       closeLightbox();
-    };
-    
-    lightbox.onclick = () => {
-      closeLightbox();
-    };
+    });
+
+    // Close lightbox when clicking on background
+    lightbox.addEventListener('click', closeLightbox);
   });
 }
 

@@ -1,41 +1,50 @@
 {
-    "name": "lite-light",
+    "name": "litelight-js",
     "version": "1.0.2",
     "description": "A lightweight, elegant lightbox utility for modern web applications",
     "main": "dist/lite-light.umd.min.js",
     "module": "dist/lite-light.min.js",
     "type": "module",
     "files": [
-      "dist",
-      "lite-light.js",
-      "lite-light.css",
-      "README.md"
+        "dist",
+        "lite-light.js",
+        "lite-light.css",
+        "README.md"
     ],
     "exports": {
-      ".": {
-        "import": "./dist/lite-light.min.js",
-        "require": "./dist/lite-light.umd.min.js"
-      },
-      "./css": "./dist/lite-light.min.css"
+        ".": {
+            "import": "./dist/lite-light.min.js",
+            "require": "./dist/lite-light.umd.min.js"
+        },
+        "./css": "./dist/lite-light.min.css"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/byronjohnson/litelight.git"
+    },
+    "homepage": "https://github.com/byronjohnson/litelight#readme",
+    "bugs": {
+        "url": "https://github.com/byronjohnson/litelight/issues"
     },
     "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1",
-      "dev": "vite build --watch",
-      "build": "vite build",
-      "clean": "rm -rf dist"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev": "vite build --watch",
+        "build": "vite build",
+        "clean": "rm -rf dist",
+        "prepublishOnly": "npm run build"
     },
     "keywords": [
-      "lightbox",
-      "gallery",
-      "images",
-      "modal",
-      "vanilla-js",
-      "lightweight",
-      "mobile-friendly"
+        "lightbox",
+        "gallery",
+        "images",
+        "modal",
+        "vanilla-js",
+        "lightweight",
+        "mobile-friendly"
     ],
-    "author": "",
-    "license": "ISC",
+    "author": "Byron Johnson",
+    "license": "MIT",
     "devDependencies": {
-      "vite": "^6.3.5"
+        "vite": "^6.3.5"
     }
-  }
+}

@@ -36,6 +36,29 @@ import { init } from './lite-light.js';
 init();
 ```
 
+## Installation
+
+### NPM
+```bash
+npm install litelight-js
+```
+
+```javascript
+import { init } from 'litelight-js';
+import 'litelight-js/dist/lite-light.min.css';
+
+init();
+```
+
+### CDN
+```html
+<link rel="stylesheet" href="https://unpkg.com/litelight-js@latest/dist/lite-light.min.css">
+<script type="module" src="https://unpkg.com/litelight-js@latest/dist/lite-light.min.js"></script>
+```
+
+### Manual Download
+Download `lite-light.js` and `lite-light.css` from the [releases page](https://github.com/byronjohnson/litelight/releases).
+
 ## Example
 
 ```html
@@ -50,7 +73,7 @@ init();
     <img src="thumb3.jpg" data-lightbox="large3.jpg" alt="Image 3">
 
     <script type="module">
-        import { init } from './lite-light.js';
+        import { init } from 'litelight-js';
         init();
     </script>
 </body>
@@ -83,4 +106,4 @@ MIT License - free for personal and commercial use.
 
 ## Contributing
 
-Issues and pull requests welcome at [GitHub](https://github.com/byronj/lite-light).
+Issues and pull requests welcome at [GitHub](https://github.com/byronjohnson/litelight).

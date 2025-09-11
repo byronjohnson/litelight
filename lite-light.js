@@ -1,10 +1,10 @@
 // LiteLight - A lightweight, elegant lightbox utility
-// Version: 1.0.1
+// Version: 1.0.2
 // Author: Byron Johnson
 // License: MIT
 
 // Version constant for programmatic access
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 
 // Preloaded images cache
 const preloadedImages = {};

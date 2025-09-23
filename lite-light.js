@@ -346,12 +346,15 @@ export function initLiteLight(options = {}) {
     prevButton.addEventListener('click', createNavigationHandler(-1));
     nextButton.addEventListener('click', createNavigationHandler(1));
     closeButton.addEventListener('click', (e) => {
-      e.stopPropagation();
+      e.stopImmediatePropagation();
       closeLightbox();
     });
 
     // Close lightbox when clicking on background
-    lightbox.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => {
+      e.stopImmediatePropagation();
+      closeLightbox();
+    });
   });
 }
 

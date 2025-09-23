@@ -4,7 +4,7 @@
 // License: MIT
 
 // Version constant for programmatic access
-const VERSION = '1.0.2';
+const VERSION = '1.0.3';
 
 // Preloaded images cache
 const preloadedImages = {};

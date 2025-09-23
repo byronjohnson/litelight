@@ -44,21 +44,30 @@ function preloadImage(url) {
   return preloadedImages[url];
 }
 
+// Store scroll position globally
+let storedScrollPosition = 0;
+
 function disableBodyScroll() {
-  const scrollY = window.scrollY;
+  storedScrollPosition = window.scrollY;
   document.body.style.position = 'fixed';
-  document.body.style.top = `-${scrollY}px`;
+  document.body.style.top = `-${storedScrollPosition}px`;
   document.body.style.width = '100%';
   document.body.style.overflowY = 'scroll';
 }
 
 function enableBodyScroll() {
-  const scrollY = document.body.style.top;
+  // Remove the fixed positioning styles first
   document.body.style.position = '';
   document.body.style.top = '';
   document.body.style.width = '';
   document.body.style.overflowY = '';
-  window.scrollTo(0, parseInt(scrollY || '0') * -1);
+  
+  // Restore the scroll position instantly without animation
+  window.scrollTo({
+    top: storedScrollPosition,
+    left: 0,
+    behavior: 'instant'
+  });
 }
 
 function getTouchDistance(touches) {
@@ -346,12 +355,15 @@ export function initLiteLight(options = {}) {
     prevButton.addEventListener('click', createNavigationHandler(-1));
     nextButton.addEventListener('click', createNavigationHandler(1));
     closeButton.addEventListener('click', (e) => {
-      e.stopPropagation();
+      e.stopImmediatePropagation();
       closeLightbox();
     });
 
     // Close lightbox when clicking on background
-    lightbox.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => {
+      e.stopImmediatePropagation();
+      closeLightbox();
+    });
   });
 }
 

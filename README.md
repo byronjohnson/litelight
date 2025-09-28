@@ -50,6 +50,20 @@ import 'litelight-js/dist/lite-light.min.css';
 init();
 ```
 
+### GitHub Packages
+```bash
+npm install @byronjohnson/litelight-js
+```
+
+```javascript
+import { init } from '@byronjohnson/litelight-js';
+import '@byronjohnson/litelight-js/dist/lite-light.min.css';
+
+init();
+```
+
+> **Note:** To install from GitHub Packages, you'll need to authenticate with GitHub. See the [Publishing](#publishing) section below.
+
 ### CDN
 ```html
 <link rel="stylesheet" href="https://unpkg.com/litelight-js@latest/dist/lite-light.min.css">
@@ -103,6 +117,44 @@ Chrome 61+, Firefox 60+, Safari 10.1+, Edge 79+
 ## License
 
 MIT License - free for personal and commercial use.
+
+## Publishing
+
+This package is published to both NPM and GitHub Packages.
+
+### Publishing to GitHub Packages
+
+1. **Configure the registry:**
+   ```bash
+   # Create or edit .npmrc file
+   echo "registry=https://npm.pkg.github.com/byronjohnson" > .npmrc
+   ```
+
+2. **Authenticate with GitHub:**
+   ```bash
+   npm login --registry=https://npm.pkg.github.com/
+   # Enter your GitHub username and Personal Access Token as password
+   ```
+
+3. **Create a Personal Access Token:**
+   - Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
+   - Generate a new token with `write:packages` and `read:packages` scopes
+   - Use this token as your password when logging in
+
+4. **Publish:**
+   ```bash
+   npm run build
+   npm publish
+   ```
+
+### Publishing to NPM
+
+To publish to the public NPM registry instead:
+
+```bash
+npm login --registry=https://registry.npmjs.org/
+npm publish
+```
 
 ## Contributing
 

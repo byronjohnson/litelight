@@ -1,5 +1,5 @@
 {
-    "name": "litelight-js",
+    "name": "@byronjohnson/litelight-js",
     "version": "1.0.3",
     "description": "A lightweight, elegant lightbox utility for modern web applications",
     "main": "dist/lite-light.umd.min.js",
@@ -17,6 +17,9 @@
             "require": "./dist/lite-light.umd.min.js"
         },
         "./css": "./dist/lite-light.min.css"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/"
     },
     "repository": {
         "type": "git",

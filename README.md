@@ -45,7 +45,7 @@ npm install litelight-js
 
 ```javascript
 import { init } from 'litelight-js';
-import 'litelight-js/dist/lite-light.min.css';
+import 'litelight-js/css';
 
 init();
 ```
@@ -57,7 +57,7 @@ npm install @byronjohnson/litelight-js
 
 ```javascript
 import { init } from '@byronjohnson/litelight-js';
-import '@byronjohnson/litelight-js/dist/lite-light.min.css';
+import '@byronjohnson/litelight-js/css';
 
 init();
 ```

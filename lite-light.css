@@ -3,17 +3,35 @@
 .lite-light {
   align-items: center;
   background: rgba(0, 0, 0, 0.8);
-  display: none;
+  display: flex;
   height: 100%;
   justify-content: center;
   left: 0;
+  opacity: 0;
+  pointer-events: none;
   position: fixed;
   top: 0;
+  transition: opacity 0.25s ease, visibility 0.25s;
+  visibility: hidden;
   width: 100%;
   z-index: 1000;
 
   &.lite-light-active {
-    display: flex;
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+  }
+
+  /* Loading spinner - visible behind the image during transitions */
+  &::after {
+    animation: lite-light-spin 0.8s linear infinite;
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    border-top-color: rgba(255, 255, 255, 0.8);
+    content: '';
+    height: 36px;
+    position: absolute;
+    width: 36px;
   }
 
   .lite-light-prev {
@@ -28,7 +46,28 @@
 
   img {
     background-color: #fff;
+    max-height: 90%;
+    max-width: 90%;
     padding: 7px;
+    position: relative;
+    transform-origin: center center;
+    will-change: transform;
+    z-index: 1;
+  }
+}
+
+/* Navigation Button Touch Targets */
+.lite-light-button {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
   }
 }
 
@@ -39,7 +78,7 @@
   display: inline-block;
   padding: 10px;
   transform: scale(1.0);
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease;
 
   &:hover {
     cursor: pointer;
@@ -47,7 +86,6 @@
   }
 
   &.lite-light-right {
-    -webkit-transform: rotate(-45deg);
     margin-right: 10px;
     transform: scale(1.00) rotate(-45deg);
 
@@ -57,7 +95,6 @@
   }
 
   &.lite-light-left {
-    -webkit-transform: rotate(135deg);
     margin-left: 10px;
     transform: scale(1.00) rotate(135deg);
 
@@ -70,19 +107,23 @@
 /* Close Button */
 .lite-light-close {
   &.lite-light-button {
+    align-items: flex-start;
     background: none;
     border: none;
+    box-sizing: content-box;
     color: white;
     cursor: pointer;
-    display: flex;
     flex-direction: column;
     height: 21.5px;
     justify-content: space-between;
+    min-height: auto;
+    min-width: auto;
+    padding: 11px;
     position: absolute;
-    right: 15px;
-    top: 15px;
+    right: 4px;
+    top: 4px;
     transform: scale(1.0);
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease;
     width: 22px;
 
     &:hover {
@@ -94,20 +135,17 @@
     background-color: #fff;
     display: block;
     height: 1px;
-    transition: all 100ms ease-in-out;
     width: 100%;
 
     &:nth-of-type(1) {
       transform: rotate(45deg);
       transform-origin: top left;
-      transition: all 100ms ease-in-out;
       width: 30px;
     }
 
     &:nth-of-type(2) {
       transform: rotate(-45deg);
       transform-origin: bottom left;
-      transition: all 100ms ease-in-out;
       width: 30px;
     }
   }
@@ -129,6 +167,12 @@
   }
   to {
     opacity: 0;
+  }
+}
+
+@keyframes lite-light-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -156,14 +200,25 @@
     }
 
     .lite-light-close {
-      font-size: 2rem;
-      right: 25px;
-      top: 25px;
+      right: 14px;
+      top: 14px;
     }
   }
+}
 
-  .lite-light-close.lite-light-button {
-    height: 21.5px;
+/* Reduced Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  .lite-light {
+    transition: none;
+  }
+
+  .lite-light-fade-in,
+  .lite-light-fade-out {
+    animation-duration: 0.01s;
+  }
+
+  .lite-light::after {
+    animation: none;
   }
 }
 
@@ -175,4 +230,3 @@
     transform: translateZ(0);
   }
 }
-

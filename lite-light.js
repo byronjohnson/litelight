@@ -1,13 +1,17 @@
 // LiteLight - A lightweight, elegant lightbox utility
-// Version: 1.0.4
+// Version: 1.0.5
 // Author: Byron Johnson
 // License: MIT
 
 // Version constant for programmatic access
-const VERSION = '1.0.4';
+const VERSION = '1.0.5';
 
-// Preloaded images cache
-const preloadedImages = {};
+// Initialization guard to prevent duplicate listeners
+let initialized = false;
+
+// Preloaded images cache (capped LRU)
+const PRELOAD_CACHE_MAX = 20;
+const preloadedImages = new Map();
 
 // Touch and zoom state variables
 let touchState = {
@@ -35,13 +39,27 @@ const ZOOM_TOLERANCE = 0.01;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 5;
 
+// rAF batching flag for zoom transforms
+let rafPending = false;
+
 // Utility functions
 function preloadImage(url) {
-  if (!preloadedImages[url]) {
-    preloadedImages[url] = new Image();
-    preloadedImages[url].src = url;
+  if (preloadedImages.has(url)) {
+    const img = preloadedImages.get(url);
+    preloadedImages.delete(url);
+    preloadedImages.set(url, img);
+    return img;
   }
-  return preloadedImages[url];
+
+  if (preloadedImages.size >= PRELOAD_CACHE_MAX) {
+    const oldestKey = preloadedImages.keys().next().value;
+    preloadedImages.delete(oldestKey);
+  }
+
+  const img = new Image();
+  img.src = url;
+  preloadedImages.set(url, img);
+  return img;
 }
 
 // Store scroll position globally
@@ -96,14 +114,34 @@ function getTouchCenter(touches) {
 
 function applyZoomTransform(imageElement) {
   imageElement.style.transform = `scale(${zoomState.scale}) translate(${zoomState.x}px, ${zoomState.y}px)`;
-  imageElement.style.transformOrigin = 'center center';
 }
 
-function resetZoom(imageElement) {
+function scheduleZoomUpdate(imageElement) {
+  if (!rafPending) {
+    rafPending = true;
+    requestAnimationFrame(() => {
+      applyZoomTransform(imageElement);
+      rafPending = false;
+    });
+  }
+}
+
+function resetZoom(imageElement, smooth = false) {
+  const wasZoomed = !isApproximatelyOne(zoomState.scale) || zoomState.x !== 0 || zoomState.y !== 0;
   zoomState.scale = 1;
   zoomState.x = 0;
   zoomState.y = 0;
-  applyZoomTransform(imageElement);
+
+  if (smooth && wasZoomed) {
+    imageElement.style.transition = 'transform 0.2s ease';
+    applyZoomTransform(imageElement);
+    imageElement.addEventListener('transitionend', () => {
+      imageElement.style.transition = '';
+    }, { once: true });
+  } else {
+    imageElement.style.transition = '';
+    applyZoomTransform(imageElement);
+  }
 }
 
 function isApproximatelyOne(value) {
@@ -112,6 +150,9 @@ function isApproximatelyOne(value) {
 
 // Initialize lightbox functionality
 export function initLiteLight(options = {}) {
+  if (initialized) return;
+  initialized = true;
+
   const config = {
     imageSelector: options.imageSelector || 'img[data-lightbox]',
     imageUrlAttribute: options.imageUrlAttribute || 'data-lightbox',
@@ -139,6 +180,7 @@ export function initLiteLight(options = {}) {
 
     const images = Array.from(document.querySelectorAll(config.imageSelector));
     let currentIndex = images.findIndex(img => img === e.target);
+    let isNavigating = false;
 
     // Function to preload adjacent images
     function preloadAdjacentImages(currentIdx) {
@@ -152,6 +194,9 @@ export function initLiteLight(options = {}) {
 
     // Function to navigate to a specific image with fade animation
     function navigateToImage(index) {
+      if (isNavigating) return;
+      isNavigating = true;
+
       // Ensure index is within bounds
       currentIndex = (index + images.length) % images.length;
 
@@ -159,32 +204,51 @@ export function initLiteLight(options = {}) {
       const nextImageUrl = images[currentIndex].getAttribute(config.imageUrlAttribute);
 
       // Ensure the image is preloaded
-      preloadImage(nextImageUrl);
+      const preloaded = preloadImage(nextImageUrl);
 
-      // Apply fade-out, then change source, then fade-in
-      lightboxImage.classList.add('lite-light-fade-out');
+      // Fade logic separated so zoom can reset first when needed
+      const startFade = () => {
+        lightboxImage.classList.add('lite-light-fade-out');
 
-      // Single animation listener that removes itself
-      lightboxImage.addEventListener('animationend', function handleFade() {
-        // The image should already be preloaded, so this should be instant
-        lightboxImage.src = nextImageUrl;
-        resetZoom(lightboxImage); // Reset zoom when changing images
-        lightboxImage.classList.remove('lite-light-fade-out');
-        lightboxImage.classList.add('lite-light-fade-in');
+        lightboxImage.addEventListener('animationend', function handleFade() {
+          const applyImage = () => {
+            lightboxImage.src = nextImageUrl;
+            lightboxImage.alt = images[currentIndex].alt || '';
+            resetZoom(lightboxImage);
+            lightboxImage.classList.remove('lite-light-fade-out');
+            lightboxImage.classList.add('lite-light-fade-in');
 
-        // Preload the next set of images in the background
-        preloadAdjacentImages(currentIndex);
+            // Preload the next set of images in the background
+            preloadAdjacentImages(currentIndex);
 
-        // Clean up after fade-in completes
-        lightboxImage.addEventListener('animationend', function() {
-          lightboxImage.classList.remove('lite-light-fade-in');
+            // Clean up after fade-in completes
+            lightboxImage.addEventListener('animationend', function() {
+              lightboxImage.classList.remove('lite-light-fade-in');
+              isNavigating = false;
+            }, { once: true });
+          };
+
+          // Use decode() to avoid image decode jank, with fallback
+          if (preloaded.decode) {
+            preloaded.decode().then(applyImage).catch(applyImage);
+          } else {
+            applyImage();
+          }
+
+          lightboxImage.removeEventListener('animationend', handleFade);
         }, { once: true });
+      };
 
-        lightboxImage.removeEventListener('animationend', handleFade);
-      }, { once: true });
+      // If zoomed, smooth-reset before fading so the user sees the zoom animate back
+      if (!isApproximatelyOne(zoomState.scale)) {
+        resetZoom(lightboxImage, true);
+        lightboxImage.addEventListener('transitionend', startFade, { once: true });
+      } else {
+        startFade();
+      }
     }
     
-    // Optimized touch event handlers
+    // Touch event handlers
     function handleTouchStart(e) {
       const touches = e.touches;
 
@@ -243,7 +307,7 @@ export function initLiteLight(options = {}) {
             }
           }
 
-          applyZoomTransform(lightboxImage);
+          scheduleZoomUpdate(lightboxImage);
         }
 
         touchState.lastCenterX = center.x;
@@ -258,7 +322,7 @@ export function initLiteLight(options = {}) {
         zoomState.x += deltaX / zoomState.scale;
         zoomState.y += deltaY / zoomState.scale;
 
-        applyZoomTransform(lightboxImage);
+        scheduleZoomUpdate(lightboxImage);
 
         touchState.lastCenterX = touch.screenX;
         touchState.lastCenterY = touch.screenY;
@@ -287,12 +351,16 @@ export function initLiteLight(options = {}) {
 
       // Reset zoom state when all touches are lifted
       if (e.touches.length === 0) {
+        // Smooth snap-back to 1x if scale is near 1 but not exactly 1
+        if (isApproximatelyOne(zoomState.scale) && zoomState.scale !== 1) {
+          resetZoom(lightboxImage, true);
+        }
         touchState.isZooming = false;
         touchState.initialDistance = 0;
       }
     }
     
-    // Optimized keyboard event handler
+    // Keyboard event handler
     function handleKeyboardNav(e) {
       switch (e.key) {
         case 'ArrowLeft':
@@ -307,78 +375,137 @@ export function initLiteLight(options = {}) {
           closeLightbox();
           e.preventDefault();
           break;
+        case 'Enter':
+        case ' ':
+          // Handle Enter/Space on focusable button divs
+          if (document.activeElement === closeButton) {
+            closeLightbox();
+            e.preventDefault();
+          } else if (document.activeElement === prevButton) {
+            navigateToImage(currentIndex - 1);
+            e.preventDefault();
+          } else if (document.activeElement === nextButton) {
+            navigateToImage(currentIndex + 1);
+            e.preventDefault();
+          }
+          break;
       }
     }
 
-    // Optimized close lightbox function
+    // Focus trap to keep Tab cycling within the lightbox
+    function handleFocusTrap(e) {
+      if (e.key !== 'Tab') return;
+
+      const isVisible = (el) => window.getComputedStyle(el).display !== 'none';
+      const focusableElements = [closeButton, prevButton, nextButton].filter(isVisible);
+
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement || !lightbox.contains(document.activeElement)) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement || !lightbox.contains(document.activeElement)) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    }
+
+    // Named navigation handlers for proper cleanup
+    function handlePrevClick(e) {
+      e.stopPropagation();
+      navigateToImage(currentIndex - 1);
+    }
+
+    function handleNextClick(e) {
+      e.stopPropagation();
+      navigateToImage(currentIndex + 1);
+    }
+
+    function handleCloseClick(e) {
+      e.stopImmediatePropagation();
+      closeLightbox();
+    }
+
+    function handleBackgroundClick(e) {
+      e.stopImmediatePropagation();
+      closeLightbox();
+    }
+
+    // Close lightbox and remove all session listeners
     function closeLightbox() {
-      lightbox.style.display = 'none';
+      lightbox.classList.remove('lite-light-active');
+      resetZoom(lightboxImage, true);
       enableBodyScroll();
+
+      // Remove all event listeners to prevent accumulation
       document.removeEventListener('keydown', handleKeyboardNav);
+      document.removeEventListener('keydown', handleFocusTrap);
+      lightbox.removeEventListener('touchstart', handleTouchStart);
+      lightbox.removeEventListener('touchmove', handleTouchMove);
+      lightbox.removeEventListener('touchend', handleTouchEnd);
+      prevButton.removeEventListener('click', handlePrevClick);
+      nextButton.removeEventListener('click', handleNextClick);
+      closeButton.removeEventListener('click', handleCloseClick);
+      lightbox.removeEventListener('click', handleBackgroundClick);
     }
 
-    // Optimized navigation handlers
-    function createNavigationHandler(direction) {
-      return (e) => {
-        e.stopPropagation();
-        navigateToImage(currentIndex + direction);
-      };
-    }
-
-    // Show lightbox and set initial image
-    lightbox.style.display = 'flex';
+    // Show lightbox with smooth transition
+    lightbox.classList.add('lite-light-active');
 
     // Preload the initial image and its adjacent images
     preloadImage(images[currentIndex].getAttribute(config.imageUrlAttribute));
     preloadAdjacentImages(currentIndex);
 
     lightboxImage.src = images[currentIndex].getAttribute(config.imageUrlAttribute);
-    resetZoom(lightboxImage); // Reset zoom for initial image
+    lightboxImage.alt = images[currentIndex].alt || '';
+    resetZoom(lightboxImage);
     lightboxImage.classList.add('lite-light-fade-in');
 
     // Disable scrolling on background
     disableBodyScroll();
+
+    // Focus the close button for keyboard accessibility
+    closeButton.focus();
 
     // Remove fade-in class after animation completes
     lightboxImage.addEventListener('animationend', () => {
       lightboxImage.classList.remove('lite-light-fade-in');
     }, { once: true });
 
-    // Set up event listeners efficiently
+    // Set up event listeners for this session
     lightbox.addEventListener('touchstart', handleTouchStart, { passive: true });
     lightbox.addEventListener('touchmove', handleTouchMove, { passive: true });
     lightbox.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     document.addEventListener('keydown', handleKeyboardNav);
+    document.addEventListener('keydown', handleFocusTrap);
 
-    // Set up navigation controls with optimized handlers
-    prevButton.addEventListener('click', createNavigationHandler(-1));
-    nextButton.addEventListener('click', createNavigationHandler(1));
-    closeButton.addEventListener('click', (e) => {
-      e.stopImmediatePropagation();
-      closeLightbox();
-    });
-
-    // Close lightbox when clicking on background
-    lightbox.addEventListener('click', (e) => {
-      e.stopImmediatePropagation();
-      closeLightbox();
-    });
+    prevButton.addEventListener('click', handlePrevClick);
+    nextButton.addEventListener('click', handleNextClick);
+    closeButton.addEventListener('click', handleCloseClick);
+    lightbox.addEventListener('click', handleBackgroundClick);
   });
 }
 
 // Function to create lightbox HTML
 function createLightboxHTML(lightboxClass) {
   const lightboxHTML = `
-    <div class="${lightboxClass}">
-      <div class="lite-light-prev lite-light-button">
+    <div class="${lightboxClass}" role="dialog" aria-modal="true" aria-label="Image lightbox">
+      <div class="lite-light-prev lite-light-button" role="button" aria-label="Previous image" tabindex="0">
         <span class="lite-light-arrow lite-light-left"></span>
       </div>
-      <img style="max-width: 90%; max-height: 90%;" />
-      <div class="lite-light-next lite-light-button">
+      <img alt="" />
+      <div class="lite-light-next lite-light-button" role="button" aria-label="Next image" tabindex="0">
         <span class="lite-light-arrow lite-light-right"></span>
       </div>
-      <div class="lite-light-close lite-light-button">
+      <div class="lite-light-close lite-light-button" role="button" aria-label="Close lightbox" tabindex="0">
         <span class="lite-light-bar"></span>
         <span class="lite-light-bar"></span>
       </div>

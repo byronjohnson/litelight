@@ -51,6 +51,7 @@
     "author": "Byron Johnson",
     "license": "MIT",
     "devDependencies": {
+        "lightningcss": "^1.31.1",
         "vite": "^6.3.5"
     }
 }

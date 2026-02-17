@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import fs from 'fs';
+import { transform } from 'lightningcss';
 
 export default defineConfig({
   build: {
@@ -47,30 +48,18 @@ export default defineConfig({
         // Read the original CSS
         const css = fs.readFileSync(cssPath, 'utf-8');
         
-        // Create minified version
-        const minifiedCSS = css
-          // Remove comments
-          .replace(/\/\*[\s\S]*?\*\//g, '')
-          // Remove extra whitespace and line breaks
-          .replace(/\s+/g, ' ')
-          // Remove spaces around specific characters
-          .replace(/\s*{\s*/g, '{')
-          .replace(/\s*}\s*/g, '}')
-          .replace(/\s*,\s*/g, ',')
-          .replace(/\s*:\s*/g, ':')
-          .replace(/\s*;\s*/g, ';')
-          .replace(/;\s*}/g, '}')
-          .replace(/\s*>\s*/g, '>')
-          .replace(/\s*\+\s*/g, '+')
-          .replace(/\s*~\s*/g, '~')
-          // Remove leading/trailing whitespace
-          .trim();
+        // Minify with LightningCSS (spec-compliant, handles calc/nesting/etc.)
+        const { code } = transform({
+          filename: 'lite-light.css',
+          code: Buffer.from(css),
+          minify: true
+        });
         
         // Emit the minified CSS file
         this.emitFile({
           type: 'asset',
           fileName: 'lite-light.min.css',
-          source: minifiedCSS
+          source: code
         });
         
         console.log('✓ CSS minified and added to bundle');

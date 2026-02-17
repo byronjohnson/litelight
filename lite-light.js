@@ -1,13 +1,14 @@
 // LiteLight - A lightweight, elegant lightbox utility
-// Version: 1.0.4
+// Version: 1.0.5
 // Author: Byron Johnson
 // License: MIT
 
 // Version constant for programmatic access
-const VERSION = '1.0.4';
+const VERSION = '1.0.5';
 
-// Preloaded images cache
-const preloadedImages = {};
+// Preloaded images cache (capped LRU)
+const PRELOAD_CACHE_MAX = 20;
+const preloadedImages = new Map();
 
 // Touch and zoom state variables
 let touchState = {
@@ -35,13 +36,27 @@ const ZOOM_TOLERANCE = 0.01;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 5;
 
+// rAF batching flag for zoom transforms
+let rafPending = false;
+
 // Utility functions
 function preloadImage(url) {
-  if (!preloadedImages[url]) {
-    preloadedImages[url] = new Image();
-    preloadedImages[url].src = url;
+  if (preloadedImages.has(url)) {
+    const img = preloadedImages.get(url);
+    preloadedImages.delete(url);
+    preloadedImages.set(url, img);
+    return img;
   }
-  return preloadedImages[url];
+
+  if (preloadedImages.size >= PRELOAD_CACHE_MAX) {
+    const oldestKey = preloadedImages.keys().next().value;
+    preloadedImages.delete(oldestKey);
+  }
+
+  const img = new Image();
+  img.src = url;
+  preloadedImages.set(url, img);
+  return img;
 }
 
 // Store scroll position globally
@@ -97,6 +112,16 @@ function getTouchCenter(touches) {
 function applyZoomTransform(imageElement) {
   imageElement.style.transform = `scale(${zoomState.scale}) translate(${zoomState.x}px, ${zoomState.y}px)`;
   imageElement.style.transformOrigin = 'center center';
+}
+
+function scheduleZoomUpdate(imageElement) {
+  if (!rafPending) {
+    rafPending = true;
+    requestAnimationFrame(() => {
+      applyZoomTransform(imageElement);
+      rafPending = false;
+    });
+  }
 }
 
 function resetZoom(imageElement) {
@@ -159,32 +184,40 @@ export function initLiteLight(options = {}) {
       const nextImageUrl = images[currentIndex].getAttribute(config.imageUrlAttribute);
 
       // Ensure the image is preloaded
-      preloadImage(nextImageUrl);
+      const preloaded = preloadImage(nextImageUrl);
 
       // Apply fade-out, then change source, then fade-in
       lightboxImage.classList.add('lite-light-fade-out');
 
       // Single animation listener that removes itself
       lightboxImage.addEventListener('animationend', function handleFade() {
-        // The image should already be preloaded, so this should be instant
-        lightboxImage.src = nextImageUrl;
-        resetZoom(lightboxImage); // Reset zoom when changing images
-        lightboxImage.classList.remove('lite-light-fade-out');
-        lightboxImage.classList.add('lite-light-fade-in');
+        const applyImage = () => {
+          lightboxImage.src = nextImageUrl;
+          resetZoom(lightboxImage);
+          lightboxImage.classList.remove('lite-light-fade-out');
+          lightboxImage.classList.add('lite-light-fade-in');
 
-        // Preload the next set of images in the background
-        preloadAdjacentImages(currentIndex);
+          // Preload the next set of images in the background
+          preloadAdjacentImages(currentIndex);
 
-        // Clean up after fade-in completes
-        lightboxImage.addEventListener('animationend', function() {
-          lightboxImage.classList.remove('lite-light-fade-in');
-        }, { once: true });
+          // Clean up after fade-in completes
+          lightboxImage.addEventListener('animationend', function() {
+            lightboxImage.classList.remove('lite-light-fade-in');
+          }, { once: true });
+        };
+
+        // Use decode() to avoid image decode jank, with fallback
+        if (preloaded.decode) {
+          preloaded.decode().then(applyImage).catch(applyImage);
+        } else {
+          applyImage();
+        }
 
         lightboxImage.removeEventListener('animationend', handleFade);
       }, { once: true });
     }
     
-    // Optimized touch event handlers
+    // Touch event handlers
     function handleTouchStart(e) {
       const touches = e.touches;
 
@@ -243,7 +276,7 @@ export function initLiteLight(options = {}) {
             }
           }
 
-          applyZoomTransform(lightboxImage);
+          scheduleZoomUpdate(lightboxImage);
         }
 
         touchState.lastCenterX = center.x;
@@ -258,7 +291,7 @@ export function initLiteLight(options = {}) {
         zoomState.x += deltaX / zoomState.scale;
         zoomState.y += deltaY / zoomState.scale;
 
-        applyZoomTransform(lightboxImage);
+        scheduleZoomUpdate(lightboxImage);
 
         touchState.lastCenterX = touch.screenX;
         touchState.lastCenterY = touch.screenY;
@@ -292,7 +325,7 @@ export function initLiteLight(options = {}) {
       }
     }
     
-    // Optimized keyboard event handler
+    // Keyboard event handler
     function handleKeyboardNav(e) {
       switch (e.key) {
         case 'ArrowLeft':
@@ -310,23 +343,45 @@ export function initLiteLight(options = {}) {
       }
     }
 
-    // Optimized close lightbox function
+    // Named navigation handlers for proper cleanup
+    function handlePrevClick(e) {
+      e.stopPropagation();
+      navigateToImage(currentIndex - 1);
+    }
+
+    function handleNextClick(e) {
+      e.stopPropagation();
+      navigateToImage(currentIndex + 1);
+    }
+
+    function handleCloseClick(e) {
+      e.stopImmediatePropagation();
+      closeLightbox();
+    }
+
+    function handleBackgroundClick(e) {
+      e.stopImmediatePropagation();
+      closeLightbox();
+    }
+
+    // Close lightbox and remove all session listeners
     function closeLightbox() {
-      lightbox.style.display = 'none';
+      lightbox.classList.remove('lite-light-active');
       enableBodyScroll();
+
+      // Remove all event listeners to prevent accumulation
       document.removeEventListener('keydown', handleKeyboardNav);
+      lightbox.removeEventListener('touchstart', handleTouchStart);
+      lightbox.removeEventListener('touchmove', handleTouchMove);
+      lightbox.removeEventListener('touchend', handleTouchEnd);
+      prevButton.removeEventListener('click', handlePrevClick);
+      nextButton.removeEventListener('click', handleNextClick);
+      closeButton.removeEventListener('click', handleCloseClick);
+      lightbox.removeEventListener('click', handleBackgroundClick);
     }
 
-    // Optimized navigation handlers
-    function createNavigationHandler(direction) {
-      return (e) => {
-        e.stopPropagation();
-        navigateToImage(currentIndex + direction);
-      };
-    }
-
-    // Show lightbox and set initial image
-    lightbox.style.display = 'flex';
+    // Show lightbox with smooth transition
+    lightbox.classList.add('lite-light-active');
 
     // Preload the initial image and its adjacent images
     preloadImage(images[currentIndex].getAttribute(config.imageUrlAttribute));
@@ -344,26 +399,17 @@ export function initLiteLight(options = {}) {
       lightboxImage.classList.remove('lite-light-fade-in');
     }, { once: true });
 
-    // Set up event listeners efficiently
+    // Set up event listeners for this session
     lightbox.addEventListener('touchstart', handleTouchStart, { passive: true });
     lightbox.addEventListener('touchmove', handleTouchMove, { passive: true });
     lightbox.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     document.addEventListener('keydown', handleKeyboardNav);
 
-    // Set up navigation controls with optimized handlers
-    prevButton.addEventListener('click', createNavigationHandler(-1));
-    nextButton.addEventListener('click', createNavigationHandler(1));
-    closeButton.addEventListener('click', (e) => {
-      e.stopImmediatePropagation();
-      closeLightbox();
-    });
-
-    // Close lightbox when clicking on background
-    lightbox.addEventListener('click', (e) => {
-      e.stopImmediatePropagation();
-      closeLightbox();
-    });
+    prevButton.addEventListener('click', handlePrevClick);
+    nextButton.addEventListener('click', handleNextClick);
+    closeButton.addEventListener('click', handleCloseClick);
+    lightbox.addEventListener('click', handleBackgroundClick);
   });
 }
 

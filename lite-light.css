@@ -46,8 +46,11 @@
 
   img {
     background-color: #fff;
+    max-height: 90%;
+    max-width: 90%;
     padding: 7px;
     position: relative;
+    transform-origin: center center;
     will-change: transform;
     z-index: 1;
   }
@@ -61,6 +64,11 @@
   justify-content: center;
   min-height: 44px;
   min-width: 44px;
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+  }
 }
 
 /* Navigation Arrows */
@@ -99,6 +107,7 @@
 /* Close Button */
 .lite-light-close {
   &.lite-light-button {
+    align-items: flex-start;
     background: none;
     border: none;
     box-sizing: content-box;
@@ -107,6 +116,8 @@
     flex-direction: column;
     height: 21.5px;
     justify-content: space-between;
+    min-height: auto;
+    min-width: auto;
     padding: 11px;
     position: absolute;
     right: 4px;
@@ -192,6 +203,22 @@
       right: 14px;
       top: 14px;
     }
+  }
+}
+
+/* Reduced Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  .lite-light {
+    transition: none;
+  }
+
+  .lite-light-fade-in,
+  .lite-light-fade-out {
+    animation-duration: 0.01s;
+  }
+
+  .lite-light::after {
+    animation: none;
   }
 }
 

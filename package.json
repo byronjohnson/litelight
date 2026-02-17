@@ -1,6 +1,6 @@
 {
     "name": "litelight-js",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "A lightweight, elegant lightbox utility for modern web applications",
     "main": "dist/lite-light.umd.min.js",
     "module": "dist/lite-light.min.js",
@@ -10,7 +10,8 @@
         "dist",
         "lite-light.js",
         "lite-light.css",
-        "README.md"
+        "README.md",
+        "docs/CHANGELOG.md"
     ],
     "exports": {
         ".": {

@@ -4,11 +4,13 @@ A lightweight, elegant JavaScript lightbox for modern web applications. Zero dep
 
 ## Features
 
-- **Lightweight** - Under 10KB total with no dependencies
-- **Mobile-first** - Touch/swipe navigation 
-- **Keyboard navigation** - Arrow keys and ESC support
-- **Smooth animations** - Elegant fade transitions
-- **Modern ES6** - Uses modern JavaScript features
+- **Lightweight** — ~4 KB gzipped (JS + CSS combined), no dependencies
+- **Mobile-first** — Touch/swipe navigation, pinch-to-zoom
+- **Keyboard navigation** — Arrow keys and ESC support
+- **Smooth animations** — Opacity fades, scale-in entrance, backdrop blur
+- **Themeable** — CSS custom properties for colors, radius, and timing
+- **TypeScript** — Ship-ready type definitions included
+- **Modern ES modules** — Works with bundlers, CDN, or a plain `<script>` tag
 
 ## Demo
 
@@ -39,6 +41,7 @@ init();
 ## Installation
 
 ### NPM
+
 ```bash
 npm install litelight-js
 ```
@@ -51,6 +54,7 @@ init();
 ```
 
 ### GitHub Packages
+
 ```bash
 npm install @byronjohnson/litelight-js
 ```
@@ -62,15 +66,20 @@ import '@byronjohnson/litelight-js/css';
 init();
 ```
 
-> **Note:** To install from GitHub Packages, you'll need to authenticate with GitHub. See the [Publishing](#publishing) section below.
-
 ### CDN
+
 ```html
 <link rel="stylesheet" href="https://unpkg.com/litelight-js@latest/dist/lite-light.min.css">
-<script type="module" src="https://unpkg.com/litelight-js@latest/dist/lite-light.min.js"></script>
+<script type="module">
+  import { init } from 'https://unpkg.com/litelight-js@latest/dist/lite-light.min.js';
+  init();
+</script>
 ```
 
+When using NPM, prefer the `./css` export (`import 'litelight-js/css'`) over deep `dist/` paths.
+
 ### Manual Download
+
 Download `lite-light.js` and `lite-light.css` from the [releases page](https://github.com/byronjohnson/litelight/releases).
 
 ## Example
@@ -98,26 +107,71 @@ Download `lite-light.js` and `lite-light.css` from the [releases page](https://g
 
 ```javascript
 init({
-    imageSelector: 'img[data-gallery]',     // CSS selector for images
-    imageUrlAttribute: 'data-gallery',      // Attribute with full-size URL
-    swipeThreshold: 75,                     // Swipe distance to navigate
-    fadeAnimationDuration: 200              // Animation duration (ms)
+    imageSelector: 'img[data-gallery]',     // CSS selector for gallery images
+    imageUrlAttribute: 'data-gallery',      // Attribute holding full-size URL
+    lightboxClass: 'lite-light',              // Root overlay class name
+    swipeThreshold: 75,                       // Horizontal swipe distance (px)
+    fadeAnimationDuration: 200                // Image fade duration (ms)
 });
+```
+
+| Option | Default | Description |
+|---|---|---|
+| `imageSelector` | `'img[data-lightbox]'` | CSS selector defining the gallery set |
+| `imageUrlAttribute` | `'data-lightbox'` | Attribute on clicked `<img>` with full-size URL |
+| `lightboxClass` | `'lite-light'` | Root overlay class; used to detect existing DOM |
+| `swipeThreshold` | `50` | Swipe distance (px) to trigger prev/next on mobile |
+| `fadeAnimationDuration` | `150` | Image fade duration in milliseconds |
+
+## Theming
+
+Override defaults with CSS custom properties on `.lite-light`. No JavaScript changes required.
+
+```css
+.lite-light {
+  --ll-overlay: rgba(0, 0, 0, 0.85);
+  --ll-duration: 0.2s;
+  --ll-radius: 8px;
+  --ll-image-bg: #fff;
+  --ll-control: #fff;
+}
+```
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `--ll-overlay` | `rgba(0, 0, 0, 0.75)` | Scrim background color |
+| `--ll-duration` | `0.15s` | Image fade timing (also set from `fadeAnimationDuration` on open) |
+| `--ll-radius` | `6px` | Image corner radius |
+| `--ll-image-bg` | `#fff` | Matte behind the photo |
+| `--ll-control` | `#fff` | Arrow and close icon color |
+
+Backdrop blur is applied progressively where supported (`backdrop-filter`).
+
+## TypeScript
+
+Types ship with the package:
+
+```typescript
+import { init, type LiteLightOptions } from 'litelight-js';
+import 'litelight-js/css';
+
+init({ fadeAnimationDuration: 200 });
 ```
 
 ## Navigation
 
 **Desktop:** Arrow keys, ESC to close, click outside to close  
-**Mobile:** Swipe left/right, tap outside to close
+**Mobile:** Swipe left/right, pinch-to-zoom, tap outside to close
 
 ## Browser Support
 
 Chrome 61+, Firefox 60+, Safari 10.1+, Edge 79+
 
+Backdrop blur and `scrollTo({ behavior: 'instant' })` degrade gracefully on older browsers.
+
 ## License
 
-MIT License - free for personal and commercial use.
-
+MIT License — free for personal and commercial use.
 
 ## Contributing
 

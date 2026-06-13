@@ -137,15 +137,34 @@ function resetZoom(imageElement, smooth = false) {
   zoomState.y = 0;
 
   if (smooth && wasZoomed) {
-    imageElement.style.transition = 'transform 0.2s ease';
     applyZoomTransform(imageElement);
-    imageElement.addEventListener('transitionend', () => {
-      imageElement.style.transition = '';
-    }, { once: true });
   } else {
-    imageElement.style.transition = '';
+    imageElement.classList.add('lite-light-no-transform-transition');
     applyZoomTransform(imageElement);
+    requestAnimationFrame(() => {
+      imageElement.classList.remove('lite-light-no-transform-transition');
+    });
   }
+}
+
+function waitTransition(element, propertyName, durationMs, callback) {
+  let settled = false;
+  const finish = () => {
+    if (settled) return;
+    settled = true;
+    element.removeEventListener('transitionend', onTransitionEnd);
+    callback();
+  };
+  const onTransitionEnd = (e) => {
+    if (e.target !== element || e.propertyName !== propertyName) return;
+    finish();
+  };
+  element.addEventListener('transitionend', onTransitionEnd);
+  setTimeout(finish, durationMs + 50);
+}
+
+function setImageZoomingActive(imageElement, active) {
+  imageElement.classList.toggle('lite-light-zooming', active);
 }
 
 function isApproximatelyOne(value) {
@@ -191,6 +210,11 @@ export function initLiteLight(options = {}) {
       preloadImage(images[nextIdx].getAttribute(config.imageUrlAttribute));
     }
 
+    function fadeImage(toOpacity, durationMs, callback) {
+      lightboxImage.style.opacity = String(toOpacity);
+      waitTransition(lightboxImage, 'opacity', durationMs, callback);
+    }
+
     function navigateToImage(index) {
       if (isNavigating) return;
       isNavigating = true;
@@ -199,41 +223,42 @@ export function initLiteLight(options = {}) {
 
       const nextImageUrl = images[currentIndex].getAttribute(config.imageUrlAttribute);
       const preloaded = preloadImage(nextImageUrl);
+      const fadeMs = config.fadeAnimationDuration;
 
-      const startFade = () => {
-        lightboxImage.classList.add('lite-light-fade-out');
-
-        lightboxImage.addEventListener('animationend', function handleFade() {
-          const applyImage = () => {
-            lightboxImage.src = nextImageUrl;
-            lightboxImage.alt = images[currentIndex].alt || '';
-            resetZoom(lightboxImage);
-            lightboxImage.classList.remove('lite-light-fade-out');
-            lightboxImage.classList.add('lite-light-fade-in');
-
-            scheduleIdlePreload(() => preloadAdjacentImages(currentIndex));
-
-            lightboxImage.addEventListener('animationend', function() {
-              lightboxImage.classList.remove('lite-light-fade-in');
-              isNavigating = false;
-            }, { once: true });
-          };
-
-          if (preloaded.decode) {
-            preloaded.decode().then(applyImage).catch(applyImage);
-          } else {
-            applyImage();
-          }
-
-          lightboxImage.removeEventListener('animationend', handleFade);
-        }, { once: true });
+      const finishNavigation = () => {
+        scheduleIdlePreload(() => preloadAdjacentImages(currentIndex));
+        isNavigating = false;
       };
+
+      const fadeIn = () => {
+        lightboxImage.style.opacity = '0';
+        void lightboxImage.offsetWidth;
+        fadeImage(1, fadeMs, finishNavigation);
+      };
+
+      const swapImage = () => {
+        const apply = () => {
+          lightboxImage.src = nextImageUrl;
+          lightboxImage.alt = images[currentIndex].alt || '';
+          resetZoom(lightboxImage);
+          fadeIn();
+        };
+
+        if (preloaded.decode) preloaded.decode().then(apply).catch(apply);
+        else apply();
+      };
+
+      const fadeOut = () => fadeImage(0, fadeMs, swapImage);
 
       if (!isApproximatelyOne(zoomState.scale)) {
         resetZoom(lightboxImage, true);
-        lightboxImage.addEventListener('transitionend', startFade, { once: true });
+        lightboxImage.addEventListener('transitionend', function onZoomEnd(e) {
+          if (e.propertyName !== 'transform') return;
+          lightboxImage.removeEventListener('transitionend', onZoomEnd);
+          fadeOut();
+        });
       } else {
-        startFade();
+        fadeOut();
       }
     }
 
@@ -275,6 +300,7 @@ export function initLiteLight(options = {}) {
         zoomState.initialX = zoomState.x;
         zoomState.initialY = zoomState.y;
         touchState.isZooming = true;
+        setImageZoomingActive(lightboxImage, true);
       }
     }
 
@@ -303,6 +329,7 @@ export function initLiteLight(options = {}) {
           }
 
           scheduleZoomUpdate(lightboxImage);
+          setImageZoomingActive(lightboxImage, true);
         }
 
         touchState.lastCenterX = center.x;
@@ -317,6 +344,7 @@ export function initLiteLight(options = {}) {
         zoomState.y += deltaY / zoomState.scale;
 
         scheduleZoomUpdate(lightboxImage);
+        setImageZoomingActive(lightboxImage, true);
 
         touchState.lastCenterX = touch.screenX;
         touchState.lastCenterY = touch.screenY;
@@ -343,6 +371,7 @@ export function initLiteLight(options = {}) {
         }
         touchState.isZooming = false;
         touchState.initialDistance = 0;
+        setImageZoomingActive(lightboxImage, false);
       }
     }
 
@@ -415,6 +444,8 @@ export function initLiteLight(options = {}) {
     function closeLightbox() {
       lightbox.classList.remove('lite-light-active');
       resetZoom(lightboxImage, true);
+      setImageZoomingActive(lightboxImage, false);
+      lightboxImage.style.opacity = '';
       enableBodyScroll();
 
       document.removeEventListener('keydown', handleKeyboardNav);
@@ -428,6 +459,7 @@ export function initLiteLight(options = {}) {
       lightbox.removeEventListener('click', handleBackgroundClick);
     }
 
+    lightbox.style.setProperty('--ll-duration', `${config.fadeAnimationDuration}ms`);
     lightbox.classList.add('lite-light-active');
 
     preloadImage(images[currentIndex].getAttribute(config.imageUrlAttribute));
@@ -436,14 +468,12 @@ export function initLiteLight(options = {}) {
     lightboxImage.src = images[currentIndex].getAttribute(config.imageUrlAttribute);
     lightboxImage.alt = images[currentIndex].alt || '';
     resetZoom(lightboxImage);
-    lightboxImage.classList.add('lite-light-fade-in');
+    lightboxImage.style.opacity = '0';
+    void lightboxImage.offsetWidth;
+    lightboxImage.style.opacity = '1';
 
     disableBodyScroll();
     closeButton.focus();
-
-    lightboxImage.addEventListener('animationend', () => {
-      lightboxImage.classList.remove('lite-light-fade-in');
-    }, { once: true });
 
     lightbox.addEventListener('touchstart', handleTouchStart, { passive: true });
     lightbox.addEventListener('touchmove', handleTouchMove, { passive: true });

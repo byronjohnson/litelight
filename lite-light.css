@@ -1,6 +1,8 @@
 /* Lite Light - Lightweight Lightbox Utility Styles */
 
 .lite-light {
+  --ll-duration: 0.15s;
+
   align-items: center;
   background: rgba(0, 0, 0, 0.8);
   display: flex;
@@ -48,11 +50,20 @@
     background-color: #fff;
     max-height: 90%;
     max-width: 90%;
+    opacity: 1;
     padding: 7px;
     position: relative;
     transform-origin: center center;
-    will-change: transform;
+    transition: opacity var(--ll-duration) ease-in-out, transform 0.2s ease;
     z-index: 1;
+
+    &.lite-light-zooming {
+      will-change: transform;
+    }
+
+    &.lite-light-no-transform-transition {
+      transition: opacity var(--ll-duration) ease-in-out, transform 0s;
+    }
   }
 }
 
@@ -210,6 +221,10 @@
 @media (prefers-reduced-motion: reduce) {
   .lite-light {
     transition: none;
+
+    img {
+      transition: none;
+    }
   }
 
   .lite-light-fade-in,

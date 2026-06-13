@@ -1,10 +1,14 @@
 /* Lite Light - Lightweight Lightbox Utility Styles */
 
 .lite-light {
+  --ll-overlay: rgba(0, 0, 0, 0.75);
   --ll-duration: 0.15s;
+  --ll-radius: 6px;
+  --ll-image-bg: #fff;
+  --ll-control: #fff;
 
   align-items: center;
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--ll-overlay);
   display: flex;
   height: 100%;
   justify-content: center;
@@ -24,16 +28,23 @@
     visibility: visible;
   }
 
-  /* Loading spinner - visible behind the image during transitions */
+  /* Loading spinner — shown only while lite-light-loading is set */
   &::after {
-    animation: lite-light-spin 0.8s linear infinite;
     border: 3px solid rgba(255, 255, 255, 0.15);
     border-radius: 50%;
     border-top-color: rgba(255, 255, 255, 0.8);
     content: '';
     height: 36px;
+    opacity: 0;
     position: absolute;
+    visibility: hidden;
     width: 36px;
+  }
+
+  &.lite-light-loading::after {
+    animation: lite-light-spin 0.8s linear infinite;
+    opacity: 1;
+    visibility: visible;
   }
 
   .lite-light-prev {
@@ -47,14 +58,16 @@
   }
 
   img {
-    background-color: #fff;
+    background-color: var(--ll-image-bg);
+    border-radius: var(--ll-radius);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
     max-height: 90%;
     max-width: 90%;
     opacity: 1;
     padding: 7px;
     position: relative;
     transform-origin: center center;
-    transition: opacity var(--ll-duration) ease-in-out, transform 0.2s ease;
+    transition: opacity var(--ll-duration) ease-in-out, transform var(--ll-duration) ease-in-out;
     z-index: 1;
 
     &.lite-light-zooming {
@@ -64,6 +77,20 @@
     &.lite-light-no-transform-transition {
       transition: opacity var(--ll-duration) ease-in-out, transform 0s;
     }
+
+    &.lite-light-entering {
+      transform: scale(0.98);
+    }
+
+    &.lite-light-entering.lite-light-entered {
+      transform: scale(1);
+    }
+  }
+}
+
+@supports (backdrop-filter: blur(2px)) {
+  .lite-light {
+    backdrop-filter: blur(4px);
   }
 }
 
@@ -75,16 +102,28 @@
   justify-content: center;
   min-height: 44px;
   min-width: 44px;
+  transition: background 0.2s ease, transform 0.2s ease;
 
   &:focus-visible {
-    outline: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15);
+    outline: 2px solid var(--ll-control);
     outline-offset: 2px;
+  }
+}
+
+.lite-light-prev.lite-light-button,
+.lite-light-next.lite-light-button {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.22);
   }
 }
 
 /* Navigation Arrows */
 .lite-light-arrow {
-  border: solid #fff;
+  border: solid var(--ll-control);
   border-width: 0 1px 1px 0;
   display: inline-block;
   padding: 10px;
@@ -118,51 +157,49 @@
 /* Close Button */
 .lite-light-close {
   &.lite-light-button {
-    align-items: flex-start;
-    background: none;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.12);
     border: none;
-    box-sizing: content-box;
+    border-radius: 50%;
+    box-sizing: border-box;
     color: white;
     cursor: pointer;
     flex-direction: column;
-    height: 21.5px;
-    justify-content: space-between;
-    min-height: auto;
-    min-width: auto;
-    padding: 11px;
+    height: 44px;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0;
     position: absolute;
-    right: 4px;
-    top: 4px;
+    right: max(4px, env(safe-area-inset-right, 0px));
+    top: max(4px, env(safe-area-inset-top, 0px));
     transform: scale(1.0);
-    transition: transform 0.3s ease;
-    width: 22px;
+    width: 44px;
 
     &:hover {
-      transform: scale(1.1);
+      background: rgba(255, 255, 255, 0.22);
+      transform: scale(1.05);
     }
   }
 
   .lite-light-bar {
-    background-color: #fff;
+    background-color: var(--ll-control);
     display: block;
     height: 1px;
-    width: 100%;
+    position: absolute;
+    width: 20px;
 
     &:nth-of-type(1) {
       transform: rotate(45deg);
-      transform-origin: top left;
-      width: 30px;
     }
 
     &:nth-of-type(2) {
       transform: rotate(-45deg);
-      transform-origin: bottom left;
-      width: 30px;
     }
   }
 }
 
-/* Animation keyframes for fading */
+/* Animation keyframes for fading (legacy — integrators may still target these) */
 @keyframes lite-light-fade-in {
   from {
     opacity: 0;
@@ -210,9 +247,9 @@
       padding: 5px;
     }
 
-    .lite-light-close {
-      right: 14px;
-      top: 14px;
+    .lite-light-close.lite-light-button {
+      right: max(14px, env(safe-area-inset-right, 0px));
+      top: max(14px, env(safe-area-inset-top, 0px));
     }
   }
 }
@@ -224,6 +261,11 @@
 
     img {
       transition: none;
+
+      &.lite-light-entering,
+      &.lite-light-entering.lite-light-entered {
+        transform: none;
+      }
     }
   }
 
@@ -232,14 +274,14 @@
     animation-duration: 0.01s;
   }
 
-  .lite-light::after {
+  .lite-light.lite-light-loading::after {
     animation: none;
   }
 }
 
-/* Mobile Safari Fixes */
+/* Mobile Safari — GPU compositing during active zoom only */
 @supports (-webkit-touch-callout: none) {
-  .lite-light img {
+  .lite-light img.lite-light-zooming {
     -webkit-transform: translateZ(0);
     backface-visibility: hidden;
     transform: translateZ(0);

@@ -167,6 +167,21 @@ function setImageZoomingActive(imageElement, active) {
   imageElement.classList.toggle('lite-light-zooming', active);
 }
 
+function whenImageReady(img, callback) {
+  const done = () => callback();
+  const fail = () => done();
+  if (img.complete && img.naturalWidth) {
+    if (img.decode) img.decode().then(done).catch(fail);
+    else done();
+  } else {
+    img.onload = () => {
+      if (img.decode) img.decode().then(done).catch(fail);
+      else done();
+    };
+    img.onerror = fail;
+  }
+}
+
 function isApproximatelyOne(value) {
   return Math.abs(value - 1) < ZOOM_TOLERANCE;
 }
@@ -210,6 +225,14 @@ export function initLiteLight(options = {}) {
       preloadImage(images[nextIdx].getAttribute(config.imageUrlAttribute));
     }
 
+    function setLoading(active) {
+      lightbox.classList.toggle('lite-light-loading', active);
+    }
+
+    function clearEntranceClasses() {
+      lightboxImage.classList.remove('lite-light-entering', 'lite-light-entered');
+    }
+
     function fadeImage(toOpacity, durationMs, callback) {
       lightboxImage.style.opacity = String(toOpacity);
       waitTransition(lightboxImage, 'opacity', durationMs, callback);
@@ -237,15 +260,15 @@ export function initLiteLight(options = {}) {
       };
 
       const swapImage = () => {
-        const apply = () => {
+        const needsLoad = !(preloaded.complete && preloaded.naturalWidth);
+        if (needsLoad) setLoading(true);
+        whenImageReady(preloaded, () => {
           lightboxImage.src = nextImageUrl;
           lightboxImage.alt = images[currentIndex].alt || '';
           resetZoom(lightboxImage);
+          if (needsLoad) setLoading(false);
           fadeIn();
-        };
-
-        if (preloaded.decode) preloaded.decode().then(apply).catch(apply);
-        else apply();
+        });
       };
 
       const fadeOut = () => fadeImage(0, fadeMs, swapImage);
@@ -442,10 +465,12 @@ export function initLiteLight(options = {}) {
     }
 
     function closeLightbox() {
-      lightbox.classList.remove('lite-light-active');
+      lightbox.classList.remove('lite-light-active', 'lite-light-loading');
       resetZoom(lightboxImage, true);
       setImageZoomingActive(lightboxImage, false);
+      clearEntranceClasses();
       lightboxImage.style.opacity = '';
+      lightboxImage.style.transform = '';
       enableBodyScroll();
 
       document.removeEventListener('keydown', handleKeyboardNav);
@@ -459,21 +484,36 @@ export function initLiteLight(options = {}) {
       lightbox.removeEventListener('click', handleBackgroundClick);
     }
 
-    lightbox.style.setProperty('--ll-duration', `${config.fadeAnimationDuration}ms`);
+    const currentUrl = images[currentIndex].getAttribute(config.imageUrlAttribute);
+    const fadeMs = config.fadeAnimationDuration;
+    const preloadedCurrent = preloadImage(currentUrl);
+
+    lightbox.style.setProperty('--ll-duration', `${fadeMs}ms`);
     lightbox.classList.add('lite-light-active');
-
-    preloadImage(images[currentIndex].getAttribute(config.imageUrlAttribute));
-    scheduleIdlePreload(() => preloadAdjacentImages(currentIndex));
-
-    lightboxImage.src = images[currentIndex].getAttribute(config.imageUrlAttribute);
-    lightboxImage.alt = images[currentIndex].alt || '';
-    resetZoom(lightboxImage);
-    lightboxImage.style.opacity = '0';
-    void lightboxImage.offsetWidth;
-    lightboxImage.style.opacity = '1';
-
     disableBodyScroll();
     closeButton.focus();
+
+    scheduleIdlePreload(() => preloadAdjacentImages(currentIndex));
+
+    const needsLoad = !(preloadedCurrent.complete && preloadedCurrent.naturalWidth);
+    if (needsLoad) setLoading(true);
+    whenImageReady(preloadedCurrent, () => {
+      lightboxImage.src = currentUrl;
+      lightboxImage.alt = images[currentIndex].alt || '';
+      lightboxImage.style.transform = '';
+      clearEntranceClasses();
+      lightboxImage.classList.add('lite-light-entering');
+      lightboxImage.style.opacity = '0';
+      void lightboxImage.offsetWidth;
+      lightboxImage.style.opacity = '1';
+      lightboxImage.classList.add('lite-light-entered');
+      if (needsLoad) setLoading(false);
+
+      waitTransition(lightboxImage, 'opacity', fadeMs, () => {
+        clearEntranceClasses();
+        resetZoom(lightboxImage);
+      });
+    });
 
     lightbox.addEventListener('touchstart', handleTouchStart, { passive: true });
     lightbox.addEventListener('touchmove', handleTouchMove, { passive: true });

@@ -9,7 +9,7 @@ All notable changes to LiteLight are documented in this file.
 - Image navigation uses opacity transitions instead of chained keyframe animations (smoother, fewer listeners per navigation)
 - `will-change: transform` is applied only during active pinch/pan gestures instead of permanently on the image
 - `fadeAnimationDuration` config option now controls image fade timing via `--ll-duration`
-- Refreshed default appearance: backdrop blur, rounded image frame with soft shadow, translucent control backdrops, scale-in entrance, safe-area-aware close button
+- Refreshed default appearance: backdrop blur, rounded image frame with soft shadow, scale-in entrance, safe-area-aware close button
 - Loading spinner appears only during actual image decode/load (`lite-light-loading`)
 - CSS custom properties for theming: `--ll-overlay`, `--ll-duration`, `--ll-radius`, `--ll-image-bg`, `--ll-control`
 - Internal performance improvements: adjacent image preloading deferred to idle time so the opened image paints sooner

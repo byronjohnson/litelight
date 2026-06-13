@@ -1,7 +1,7 @@
 {
     "name": "litelight-js",
     "version": "1.1.0",
-    "description": "A lightweight, elegant lightbox utility for modern web applications",
+    "description": "Zero-dependency vanilla JS lightbox for image galleries — touch, swipe, pinch-zoom, keyboard nav, TypeScript. npm install litelight-js. Under 10KB.",
     "main": "dist/lite-light.umd.min.js",
     "module": "dist/lite-light.min.js",
     "style": "dist/lite-light.min.css",
@@ -10,7 +10,12 @@
         "dist",
         "lite-light.js",
         "lite-light.css",
+        "lite-light.d.ts",
         "README.md",
+        "AGENTS.md",
+        "llms.txt",
+        "llms-full.txt",
+        "ai.txt",
         "docs/CHANGELOG.md"
     ],
     "exports": {
@@ -23,13 +28,17 @@
             "default": "./dist/lite-light.min.css"
         },
         "./dist/lite-light.min.css": "./dist/lite-light.min.css",
+        "./AGENTS.md": "./AGENTS.md",
+        "./llms.txt": "./llms.txt",
+        "./llms-full.txt": "./llms-full.txt",
+        "./ai.txt": "./ai.txt",
         "./package.json": "./package.json"
     },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/byronjohnson/litelight.git"
     },
-    "homepage": "https://github.com/byronjohnson/litelight#readme",
+    "homepage": "https://litelightbox.com",
     "bugs": {
         "url": "https://github.com/byronjohnson/litelight/issues"
     },
@@ -42,12 +51,29 @@
     },
     "keywords": [
         "lightbox",
+        "vanilla-js",
+        "vanilla-js-lightbox",
+        "javascript-lightbox",
+        "js-lightbox",
+        "image-lightbox",
+        "image-gallery",
         "gallery",
         "images",
         "modal",
-        "vanilla-js",
+        "photo-viewer",
+        "zero-dependencies",
+        "no-jquery",
         "lightweight",
-        "mobile-friendly"
+        "mobile-friendly",
+        "touch",
+        "swipe",
+        "pinch-zoom",
+        "esm",
+        "typescript",
+        "litelight",
+        "litelight-js",
+        "responsive",
+        "accessible"
     ],
     "author": "Byron Johnson",
     "license": "MIT",

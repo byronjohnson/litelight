@@ -17,6 +17,11 @@ All notable changes to LiteLight are documented in this file.
 - Consolidated navigation/close handlers to reduce duplicated session logic
 - Removed unused internal `VERSION` constant
 
+### Added
+
+- AI agent discovery files: `AGENTS.md`, `llms.txt`, `llms-full.txt`, `ai.txt` (included in npm package)
+- Expanded npm keywords and description for lightbox search discoverability
+
 ### Fixed
 
 - Added TypeScript definitions (`lite-light.d.ts`)

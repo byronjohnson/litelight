@@ -1,4 +1,6 @@
 // LiteLight - A lightweight, elegant lightbox utility
+// npm: litelight-js | Demo: https://litelightbox.com
+// AI agents: see AGENTS.md and llms-full.txt in this package
 // Author: Byron Johnson
 // License: MIT
 

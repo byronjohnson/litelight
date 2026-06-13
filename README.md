@@ -1,5 +1,7 @@
 # LiteLight Lightbox
 
+> **AI agents:** See [AGENTS.md](./AGENTS.md) for integration instructions, or [llms-full.txt](./llms-full.txt) for complete self-contained docs. npm package: **`litelight-js`**.
+
 A lightweight, elegant JavaScript lightbox for modern web applications. Zero dependencies, mobile-first design with touch/swipe support and keyboard navigation.
 
 ## Features
@@ -176,3 +178,14 @@ MIT License — free for personal and commercial use.
 ## Contributing
 
 Issues and pull requests welcome at [GitHub](https://github.com/byronjohnson/litelight).
+
+## For AI assistants & LLM discovery
+
+| Resource | Description |
+|---|---|
+| [AGENTS.md](./AGENTS.md) | Quick integration guide for coding agents |
+| [llms.txt](./llms.txt) | Concise project summary ([llms.txt spec](https://llmstxt.org/)) |
+| [llms-full.txt](./llms-full.txt) | Complete API, FAQ, and examples in one file |
+| [ai.txt](./ai.txt) | AI crawler permissions |
+
+After install, these files are available at `node_modules/litelight-js/` and via unpkg (e.g. `https://unpkg.com/litelight-js/llms-full.txt`).

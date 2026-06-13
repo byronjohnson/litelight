@@ -102,7 +102,7 @@
   justify-content: center;
   min-height: 44px;
   min-width: 44px;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: transform 0.2s ease;
 
   &:focus-visible {
     box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15);
@@ -113,12 +113,7 @@
 
 .lite-light-prev.lite-light-button,
 .lite-light-next.lite-light-button {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 50%;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.22);
-  }
+  background: none;
 }
 
 /* Navigation Arrows */
@@ -158,9 +153,8 @@
 .lite-light-close {
   &.lite-light-button {
     align-items: center;
-    background: rgba(255, 255, 255, 0.12);
+    background: none;
     border: none;
-    border-radius: 50%;
     box-sizing: border-box;
     color: white;
     cursor: pointer;
@@ -177,7 +171,6 @@
     width: 44px;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.22);
       transform: scale(1.05);
     }
   }

@@ -36,6 +36,10 @@ lite-light/
 ├── lite-light.js          # SOURCE OF TRUTH for JavaScript (~550 lines)
 ├── lite-light.css         # SOURCE OF TRUTH for styles (~280 lines, uses CSS nesting)
 ├── lite-light.d.ts        # TypeScript definitions (copied to dist/ on build)
+├── AGENTS.md              # AI coding agent integration guide (published to npm)
+├── llms.txt               # LLM discovery summary (llmstxt.org)
+├── llms-full.txt          # Self-contained agent/API reference
+├── ai.txt                 # AI crawler permissions
 ├── vite.config.js         # Build: ES + UMD bundles + minified CSS + size report
 ├── package.json           # NPM metadata, exports map, scripts
 ├── README.md              # User-facing docs (keep in sync with API changes)
@@ -478,6 +482,8 @@ MAX_ZOOM = 5
 ## 14. Related Links
 
 - **Demo site:** https://litelightbox.com/
+- **Agent integration:** [`AGENTS.md`](../AGENTS.md)
+- **LLM discovery:** [`llms.txt`](../llms.txt), [`llms-full.txt`](../llms-full.txt)
 - **Issues:** https://github.com/byronjohnson/litelight/issues
 - **User docs:** [`README.md`](../README.md)
 - **Funding:** Buy Me a Coffee — `byronj` (`.github/FUNDING.yml`)

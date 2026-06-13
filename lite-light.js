@@ -1,10 +1,6 @@
 // LiteLight - A lightweight, elegant lightbox utility
-// Version: 1.0.5
 // Author: Byron Johnson
 // License: MIT
-
-// Version constant for programmatic access
-const VERSION = '1.0.5';
 
 // Initialization guard to prevent duplicate listeners
 let initialized = false;
@@ -17,8 +13,6 @@ const preloadedImages = new Map();
 let touchState = {
   startX: 0,
   startY: 0,
-  endX: 0,
-  endY: 0,
   initialDistance: 0,
   isZooming: false,
   lastCenterX: 0,
@@ -42,6 +36,10 @@ const MAX_ZOOM = 5;
 // rAF batching flag for zoom transforms
 let rafPending = false;
 
+const mobileMediaQuery = typeof window !== 'undefined'
+  ? window.matchMedia('(max-width: 768px)')
+  : { matches: false };
+
 // Utility functions
 function preloadImage(url) {
   if (preloadedImages.has(url)) {
@@ -62,6 +60,14 @@ function preloadImage(url) {
   return img;
 }
 
+function scheduleIdlePreload(fn) {
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(fn, { timeout: 2000 });
+  } else {
+    setTimeout(fn, 0);
+  }
+}
+
 // Store scroll position globally
 let storedScrollPosition = 0;
 
@@ -74,13 +80,11 @@ function disableBodyScroll() {
 }
 
 function enableBodyScroll() {
-  // Remove the fixed positioning styles first
   document.body.style.position = '';
   document.body.style.top = '';
   document.body.style.width = '';
   document.body.style.overflowY = '';
-  
-  // Restore the scroll position instantly without animation
+
   window.scrollTo({
     top: storedScrollPosition,
     left: 0,
@@ -162,12 +166,10 @@ export function initLiteLight(options = {}) {
     ...options
   };
 
-  // Create lightbox HTML if it doesn't exist
   if (!document.querySelector(`.${config.lightboxClass}`)) {
     createLightboxHTML(config.lightboxClass);
   }
 
-  // Cache DOM elements
   const lightbox = document.querySelector(`.${config.lightboxClass}`);
   const lightboxImage = lightbox.querySelector('img');
   const prevButton = lightbox.querySelector('.lite-light-prev');
@@ -175,38 +177,29 @@ export function initLiteLight(options = {}) {
   const closeButton = lightbox.querySelector('.lite-light-close');
 
   document.addEventListener('click', (e) => {
-    // Only proceed if an image with the specified attribute was clicked
     if (e.target.tagName !== 'IMG' || !e.target.hasAttribute(config.imageUrlAttribute)) return;
 
     const images = Array.from(document.querySelectorAll(config.imageSelector));
     let currentIndex = images.findIndex(img => img === e.target);
     let isNavigating = false;
 
-    // Function to preload adjacent images
     function preloadAdjacentImages(currentIdx) {
       const prevIdx = (currentIdx - 1 + images.length) % images.length;
       const nextIdx = (currentIdx + 1) % images.length;
 
-      // Preload previous and next images
       preloadImage(images[prevIdx].getAttribute(config.imageUrlAttribute));
       preloadImage(images[nextIdx].getAttribute(config.imageUrlAttribute));
     }
 
-    // Function to navigate to a specific image with fade animation
     function navigateToImage(index) {
       if (isNavigating) return;
       isNavigating = true;
 
-      // Ensure index is within bounds
       currentIndex = (index + images.length) % images.length;
 
-      // Get the next image URL
       const nextImageUrl = images[currentIndex].getAttribute(config.imageUrlAttribute);
-
-      // Ensure the image is preloaded
       const preloaded = preloadImage(nextImageUrl);
 
-      // Fade logic separated so zoom can reset first when needed
       const startFade = () => {
         lightboxImage.classList.add('lite-light-fade-out');
 
@@ -218,17 +211,14 @@ export function initLiteLight(options = {}) {
             lightboxImage.classList.remove('lite-light-fade-out');
             lightboxImage.classList.add('lite-light-fade-in');
 
-            // Preload the next set of images in the background
-            preloadAdjacentImages(currentIndex);
+            scheduleIdlePreload(() => preloadAdjacentImages(currentIndex));
 
-            // Clean up after fade-in completes
             lightboxImage.addEventListener('animationend', function() {
               lightboxImage.classList.remove('lite-light-fade-in');
               isNavigating = false;
             }, { once: true });
           };
 
-          // Use decode() to avoid image decode jank, with fallback
           if (preloaded.decode) {
             preloaded.decode().then(applyImage).catch(applyImage);
           } else {
@@ -239,7 +229,6 @@ export function initLiteLight(options = {}) {
         }, { once: true });
       };
 
-      // If zoomed, smooth-reset before fading so the user sees the zoom animate back
       if (!isApproximatelyOne(zoomState.scale)) {
         resetZoom(lightboxImage, true);
         lightboxImage.addEventListener('transitionend', startFade, { once: true });
@@ -247,13 +236,25 @@ export function initLiteLight(options = {}) {
         startFade();
       }
     }
-    
-    // Touch event handlers
+
+    function performAction(action) {
+      switch (action) {
+        case 'close':
+          closeLightbox();
+          break;
+        case 'prev':
+          navigateToImage(currentIndex - 1);
+          break;
+        case 'next':
+          navigateToImage(currentIndex + 1);
+          break;
+      }
+    }
+
     function handleTouchStart(e) {
       const touches = e.touches;
 
       if (touches.length === 1) {
-        // Single touch - potential swipe or pan
         const touch = touches[0];
         touchState.startX = touch.screenX;
         touchState.startY = touch.screenY;
@@ -261,18 +262,15 @@ export function initLiteLight(options = {}) {
         touchState.lastCenterY = touch.screenY;
         touchState.isZooming = false;
 
-        // Store initial zoom state
         zoomState.initialScale = zoomState.scale;
         zoomState.initialX = zoomState.x;
         zoomState.initialY = zoomState.y;
       } else if (touches.length === 2) {
-        // Multi-touch - pinch gesture
         touchState.initialDistance = getTouchDistance(touches);
         const center = getTouchCenter(touches);
         touchState.lastCenterX = center.x;
         touchState.lastCenterY = center.y;
 
-        // Store initial zoom state
         zoomState.initialScale = zoomState.scale;
         zoomState.initialX = zoomState.x;
         zoomState.initialY = zoomState.y;
@@ -284,7 +282,6 @@ export function initLiteLight(options = {}) {
       const touches = e.touches;
 
       if (touches.length === 2) {
-        // Pinch-to-zoom
         const currentDistance = getTouchDistance(touches);
         const center = getTouchCenter(touches);
 
@@ -292,12 +289,10 @@ export function initLiteLight(options = {}) {
           const scaleChange = currentDistance / touchState.initialDistance;
           zoomState.scale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomState.initialScale * scaleChange));
 
-          // Reset position when zoomed out to approximately 1x scale
           if (isApproximatelyOne(zoomState.scale)) {
             zoomState.x = 0;
             zoomState.y = 0;
           } else {
-            // Pan based on center movement
             const deltaX = center.x - touchState.lastCenterX;
             const deltaY = center.y - touchState.lastCenterY;
 
@@ -314,7 +309,6 @@ export function initLiteLight(options = {}) {
         touchState.lastCenterY = center.y;
         touchState.isZooming = true;
       } else if (touches.length === 1 && zoomState.scale > MIN_ZOOM) {
-        // Single touch pan when zoomed
         const touch = touches[0];
         const deltaX = touch.screenX - touchState.lastCenterX;
         const deltaY = touch.screenY - touchState.lastCenterY;
@@ -326,32 +320,24 @@ export function initLiteLight(options = {}) {
 
         touchState.lastCenterX = touch.screenX;
         touchState.lastCenterY = touch.screenY;
-        touchState.isZooming = true; // Prevent navigation during pan
+        touchState.isZooming = true;
       }
     }
 
     function handleTouchEnd(e) {
-      // Only process swipe if it was a single touch and not a zoom gesture
       if (e.changedTouches.length === 1 && !touchState.isZooming && e.touches.length === 0 && isApproximatelyOne(zoomState.scale)) {
         const touch = e.changedTouches[0];
-        touchState.endX = touch.screenX;
-        touchState.endY = touch.screenY;
+        const swipeDistanceX = touch.screenX - touchState.startX;
+        const swipeDistanceY = touch.screenY - touchState.startY;
 
-        const swipeDistanceX = touchState.endX - touchState.startX;
-        const swipeDistanceY = touchState.endY - touchState.startY;
-
-        // Check if horizontal swipe is more significant than vertical
         if (Math.abs(swipeDistanceX) > Math.abs(swipeDistanceY) &&
             Math.abs(swipeDistanceX) > config.swipeThreshold) {
-          // Navigate based on swipe direction
           navigateToImage(swipeDistanceX > 0 ? currentIndex - 1 : currentIndex + 1);
-          e.stopPropagation(); // Prevent lightbox from closing
+          e.stopPropagation();
         }
       }
 
-      // Reset zoom state when all touches are lifted
       if (e.touches.length === 0) {
-        // Smooth snap-back to 1x if scale is near 1 but not exactly 1
         if (isApproximatelyOne(zoomState.scale) && zoomState.scale !== 1) {
           resetZoom(lightboxImage, true);
         }
@@ -359,47 +345,43 @@ export function initLiteLight(options = {}) {
         touchState.initialDistance = 0;
       }
     }
-    
-    // Keyboard event handler
+
     function handleKeyboardNav(e) {
       switch (e.key) {
         case 'ArrowLeft':
-          navigateToImage(currentIndex - 1);
+          performAction('prev');
           e.preventDefault();
           break;
         case 'ArrowRight':
-          navigateToImage(currentIndex + 1);
+          performAction('next');
           e.preventDefault();
           break;
         case 'Escape':
-          closeLightbox();
+          performAction('close');
           e.preventDefault();
           break;
         case 'Enter':
         case ' ':
-          // Handle Enter/Space on focusable button divs
           if (document.activeElement === closeButton) {
-            closeLightbox();
+            performAction('close');
             e.preventDefault();
-          } else if (document.activeElement === prevButton) {
-            navigateToImage(currentIndex - 1);
+          } else if (document.activeElement === prevButton && !mobileMediaQuery.matches) {
+            performAction('prev');
             e.preventDefault();
-          } else if (document.activeElement === nextButton) {
-            navigateToImage(currentIndex + 1);
+          } else if (document.activeElement === nextButton && !mobileMediaQuery.matches) {
+            performAction('next');
             e.preventDefault();
           }
           break;
       }
     }
 
-    // Focus trap to keep Tab cycling within the lightbox
     function handleFocusTrap(e) {
       if (e.key !== 'Tab') return;
 
-      const isVisible = (el) => window.getComputedStyle(el).display !== 'none';
-      const focusableElements = [closeButton, prevButton, nextButton].filter(isVisible);
-
-      if (focusableElements.length === 0) return;
+      const focusableElements = mobileMediaQuery.matches
+        ? [closeButton]
+        : [closeButton, prevButton, nextButton];
 
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
@@ -417,69 +399,52 @@ export function initLiteLight(options = {}) {
       }
     }
 
-    // Named navigation handlers for proper cleanup
-    function handlePrevClick(e) {
+    function handleControlClick(e) {
       e.stopPropagation();
-      navigateToImage(currentIndex - 1);
-    }
-
-    function handleNextClick(e) {
-      e.stopPropagation();
-      navigateToImage(currentIndex + 1);
-    }
-
-    function handleCloseClick(e) {
-      e.stopImmediatePropagation();
-      closeLightbox();
+      const target = e.currentTarget;
+      if (target === closeButton) performAction('close');
+      else if (target === prevButton) performAction('prev');
+      else if (target === nextButton) performAction('next');
     }
 
     function handleBackgroundClick(e) {
-      e.stopImmediatePropagation();
-      closeLightbox();
+      e.stopPropagation();
+      performAction('close');
     }
 
-    // Close lightbox and remove all session listeners
     function closeLightbox() {
       lightbox.classList.remove('lite-light-active');
       resetZoom(lightboxImage, true);
       enableBodyScroll();
 
-      // Remove all event listeners to prevent accumulation
       document.removeEventListener('keydown', handleKeyboardNav);
       document.removeEventListener('keydown', handleFocusTrap);
       lightbox.removeEventListener('touchstart', handleTouchStart);
       lightbox.removeEventListener('touchmove', handleTouchMove);
       lightbox.removeEventListener('touchend', handleTouchEnd);
-      prevButton.removeEventListener('click', handlePrevClick);
-      nextButton.removeEventListener('click', handleNextClick);
-      closeButton.removeEventListener('click', handleCloseClick);
+      prevButton.removeEventListener('click', handleControlClick);
+      nextButton.removeEventListener('click', handleControlClick);
+      closeButton.removeEventListener('click', handleControlClick);
       lightbox.removeEventListener('click', handleBackgroundClick);
     }
 
-    // Show lightbox with smooth transition
     lightbox.classList.add('lite-light-active');
 
-    // Preload the initial image and its adjacent images
     preloadImage(images[currentIndex].getAttribute(config.imageUrlAttribute));
-    preloadAdjacentImages(currentIndex);
+    scheduleIdlePreload(() => preloadAdjacentImages(currentIndex));
 
     lightboxImage.src = images[currentIndex].getAttribute(config.imageUrlAttribute);
     lightboxImage.alt = images[currentIndex].alt || '';
     resetZoom(lightboxImage);
     lightboxImage.classList.add('lite-light-fade-in');
 
-    // Disable scrolling on background
     disableBodyScroll();
-
-    // Focus the close button for keyboard accessibility
     closeButton.focus();
 
-    // Remove fade-in class after animation completes
     lightboxImage.addEventListener('animationend', () => {
       lightboxImage.classList.remove('lite-light-fade-in');
     }, { once: true });
 
-    // Set up event listeners for this session
     lightbox.addEventListener('touchstart', handleTouchStart, { passive: true });
     lightbox.addEventListener('touchmove', handleTouchMove, { passive: true });
     lightbox.addEventListener('touchend', handleTouchEnd, { passive: true });
@@ -487,14 +452,13 @@ export function initLiteLight(options = {}) {
     document.addEventListener('keydown', handleKeyboardNav);
     document.addEventListener('keydown', handleFocusTrap);
 
-    prevButton.addEventListener('click', handlePrevClick);
-    nextButton.addEventListener('click', handleNextClick);
-    closeButton.addEventListener('click', handleCloseClick);
+    prevButton.addEventListener('click', handleControlClick);
+    nextButton.addEventListener('click', handleControlClick);
+    closeButton.addEventListener('click', handleControlClick);
     lightbox.addEventListener('click', handleBackgroundClick);
   });
 }
 
-// Function to create lightbox HTML
 function createLightboxHTML(lightboxClass) {
   const lightboxHTML = `
     <div class="${lightboxClass}" role="dialog" aria-modal="true" aria-label="Image lightbox">
@@ -511,11 +475,10 @@ function createLightboxHTML(lightboxClass) {
       </div>
     </div>
   `;
-  
+
   document.body.insertAdjacentHTML('beforeend', lightboxHTML);
 }
 
-// Default initialization function
 export function init(options) {
   initLiteLight(options);
 }

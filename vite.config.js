@@ -1,7 +1,19 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import fs from 'fs';
+import { gzipSync } from 'zlib';
 import { transform } from 'lightningcss';
+
+function formatSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  return `${(bytes / 1024).toFixed(2)} KB`;
+}
+
+function logBundleSizes(fileName, source) {
+  const buffer = Buffer.isBuffer(source) ? source : Buffer.from(source);
+  const gzipBytes = gzipSync(buffer).length;
+  console.log(`  ${fileName}: ${formatSize(buffer.length)} raw, ${formatSize(gzipBytes)} gzip`);
+}
 
 export default defineConfig({
   build: {
@@ -29,40 +41,66 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     sourcemap: false,
-    minify: true // Uses esbuild by default (faster than terser)
+    minify: true
   },
   plugins: [
     {
       name: 'build-css',
-      buildStart() {
-        console.log('Starting CSS processing...');
-      },
-      generateBundle() {
+      generateBundle(_options, bundle) {
         const cssPath = resolve(__dirname, 'lite-light.css');
-        
+
         if (!fs.existsSync(cssPath)) {
           console.error('CSS file not found:', cssPath);
           return;
         }
-        
-        // Read the original CSS
+
         const css = fs.readFileSync(cssPath, 'utf-8');
-        
-        // Minify with LightningCSS (spec-compliant, handles calc/nesting/etc.)
         const { code } = transform({
           filename: 'lite-light.css',
           code: Buffer.from(css),
           minify: true
         });
-        
-        // Emit the minified CSS file
+
         this.emitFile({
           type: 'asset',
           fileName: 'lite-light.min.css',
           source: code
         });
-        
-        console.log('✓ CSS minified and added to bundle');
+
+        const typesPath = resolve(__dirname, 'lite-light.d.ts');
+        if (fs.existsSync(typesPath)) {
+          this.emitFile({
+            type: 'asset',
+            fileName: 'lite-light.d.ts',
+            source: fs.readFileSync(typesPath, 'utf-8')
+          });
+        }
+
+        console.log('Bundle sizes:');
+        for (const [fileName, chunk] of Object.entries(bundle)) {
+          if (chunk.type === 'chunk') {
+            logBundleSizes(fileName, chunk.code);
+          }
+        }
+        logBundleSizes('lite-light.min.css', code);
+      },
+      writeBundle(_options, bundle) {
+        for (const [fileName, chunk] of Object.entries(bundle)) {
+          if (chunk.type === 'asset' && fileName.endsWith('.d.ts')) {
+            logBundleSizes(fileName, chunk.source);
+          }
+        }
+
+        const esmGzip = bundle['lite-light.min.js']?.type === 'chunk'
+          ? gzipSync(Buffer.from(bundle['lite-light.min.js'].code)).length
+          : 0;
+        const cssGzip = bundle['lite-light.min.css']?.type === 'asset'
+          ? gzipSync(Buffer.from(bundle['lite-light.min.css'].source)).length
+          : 0;
+
+        if (esmGzip && cssGzip) {
+          console.log(`  ESM + CSS total: ${formatSize(esmGzip + cssGzip)} gzip`);
+        }
       }
     }
   ]

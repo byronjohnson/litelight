@@ -15,9 +15,9 @@
     ],
     "exports": {
         ".": {
+            "types": "./dist/lite-light.d.ts",
             "import": "./dist/lite-light.min.js",
-            "require": "./dist/lite-light.umd.min.js",
-            "types": "./dist/lite-light.d.ts"
+            "require": "./dist/lite-light.umd.min.js"
         },
         "./css": {
             "default": "./dist/lite-light.min.css"

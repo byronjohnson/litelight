@@ -213,10 +213,15 @@ export function initLiteLight(options = {}) {
   const closeButton = lightbox.querySelector('.lite-light-close');
 
   document.addEventListener('click', (e) => {
-    if (e.target.tagName !== 'IMG' || !e.target.hasAttribute(config.imageUrlAttribute)) return;
+    // Trigger element may be an <img> (default) or any element matched by a
+    // custom imageSelector (e.g. 'a[data-lightbox]' for text-link triggers)
+    // — walk up from the click target instead of hardcoding tagName === IMG.
+    const trigger = e.target.closest(config.imageSelector);
+    if (!trigger || !trigger.hasAttribute(config.imageUrlAttribute)) return;
+    if (trigger.tagName === 'A') e.preventDefault();
 
     const images = Array.from(document.querySelectorAll(config.imageSelector));
-    let currentIndex = images.findIndex(img => img === e.target);
+    let currentIndex = images.findIndex(img => img === trigger);
     let isNavigating = false;
 
     function preloadAdjacentImages(currentIdx) {

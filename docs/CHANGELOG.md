@@ -2,6 +2,19 @@
 
 All notable changes to LiteLight are documented in this file.
 
+## [1.2.0] - 2026-08-10
+
+### Added
+
+- **Text-link triggers:** open the lightbox from `<a data-lightbox="…">` (or any non-`<img>` element) by setting `imageSelector` — e.g. `init({ imageSelector: 'a[data-lightbox]' })` or mix with images via `'img[data-lightbox], a[data-lightbox]'`. Click handling uses `closest(imageSelector)` instead of a hardcoded `IMG` tag check ([#7](https://github.com/byronjohnson/litelight/pull/7) by [@jbender0](https://github.com/jbender0))
+- Docs for text-link usage in `README.md`, `AGENTS.md`, `llms.txt`, and `llms-full.txt`
+
+### Fixed
+
+- Plain clicks on `<a>` triggers call `preventDefault()` so navigation does not race the lightbox; modifier clicks (Cmd/Ctrl/Shift/Alt) still open the lightbox and keep native link behavior (e.g. new tab)
+- **Mobile pinch/pan:** the page behind the lightbox no longer zooms or pans with the gesture (`touch-action: none` on the active overlay, non-passive `touchmove` `preventDefault` during pinch/pan, Safari `gesturestart`/`gesturechange` blocked)
+- **iOS Safari pinch smoothness:** disable transform transitions and backdrop-filter during the gesture; remove a conflicting Safari `transform` override; use `translate3d` for the live zoom transform
+
 ## [1.1.0] - 2026-06-13
 
 ### Changed

@@ -25,6 +25,8 @@
   &.lite-light-active {
     opacity: 1;
     pointer-events: auto;
+    /* Keep pinch/pan on the image — block browser page zoom/scroll on the overlay */
+    touch-action: none;
     visibility: visible;
   }
 
@@ -70,7 +72,10 @@
     transition: opacity var(--ll-duration) ease-in-out, transform var(--ll-duration) ease-in-out;
     z-index: 1;
 
+    /* Disable transform easing while pinching/panning — Safari stutters if every
+       rAF zoom update is interpolated by transition */
     &.lite-light-zooming {
+      transition: opacity var(--ll-duration) ease-in-out, transform 0s;
       will-change: transform;
     }
 
@@ -91,6 +96,11 @@
 @supports (backdrop-filter: blur(2px)) {
   .lite-light {
     backdrop-filter: blur(4px);
+  }
+
+  /* Blur is expensive on iOS during live transform updates — drop it for the gesture */
+  .lite-light.lite-light-gesture {
+    backdrop-filter: none;
   }
 }
 
@@ -272,11 +282,11 @@
   }
 }
 
-/* Mobile Safari — GPU compositing during active zoom only */
+/* Mobile Safari — keep the zooming image on its own compositor layer.
+   Do not set `transform` here — that would fight the inline pinch transform. */
 @supports (-webkit-touch-callout: none) {
   .lite-light img.lite-light-zooming {
-    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    transform: translateZ(0);
   }
 }

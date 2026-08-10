@@ -79,6 +79,8 @@ init({ imageSelector: 'a[data-lightbox]' });
 
 Keep a real `href` for progressive enhancement when JS is unavailable.
 
+Plain clicks open the lightbox only. Cmd/Ctrl-click (and other modified clicks) still open the lightbox and leave native link behavior (e.g. new tab).
+
 ### 3. Initialize once
 
 ```javascript
@@ -171,7 +173,9 @@ Backdrop blur applies where `backdrop-filter` is supported.
 
 - Zero runtime dependencies
 - ~4 KB gzip combined (ESM + CSS); under 10 KB project ceiling
+- Image thumbnails **and** text-link triggers (via `imageSelector`)
 - Mobile: swipe navigation, pinch-to-zoom, pan when zoomed
+- Pinch/pan zooms only the lightbox image — the page behind stays put
 - Desktop: arrow buttons, keyboard (←/→/Esc), click backdrop to close
 - Opacity-transition image navigation with `Image.decode()` when available
 - TypeScript definitions included
@@ -184,7 +188,7 @@ Backdrop blur applies where `backdrop-filter` is supported.
 ## Navigation behavior
 
 **Desktop:** ←/→ keys, Esc, click outside image, prev/next buttons  
-**Mobile (<768px):** swipe left/right; arrow buttons hidden; pinch-zoom enabled  
+**Mobile (<768px):** swipe left/right; arrow buttons hidden; pinch-zoom on the image only (browser page zoom is blocked while the lightbox is open)  
 **All:** Gallery wraps circularly; all matching `imageSelector` triggers on the page form one gallery
 
 ---
@@ -217,14 +221,26 @@ Works with React, Vue, Angular, Svelte, Astro, plain HTML.
   <img src="thumb1.jpg" data-lightbox="large1.jpg" alt="Image 1">
   <img src="thumb2.jpg" data-lightbox="large2.jpg" alt="Image 2">
   <img src="thumb3.jpg" data-lightbox="large3.jpg" alt="Image 3">
+  <p><a href="large1.jpg" data-lightbox="large1.jpg">Open first image via text link</a></p>
 
   <script type="module">
     import { init } from 'https://unpkg.com/litelight-js@latest/dist/lite-light.min.js';
-    init();
+    init({ imageSelector: 'img[data-lightbox], a[data-lightbox]' });
   </script>
 </body>
 </html>
 ```
+
+---
+
+## Changelog (1.2.0)
+
+Full history: `docs/CHANGELOG.md` in the package / repo.
+
+- **Added:** text-link (and other non-`<img>`) triggers via `imageSelector` + `closest()` click matching ([#7](https://github.com/byronjohnson/litelight/pull/7))
+- **Fixed:** `<a>` plain-click `preventDefault` with modifier-click native behavior preserved
+- **Fixed:** mobile pinch/pan no longer zooms the page behind the lightbox
+- **Fixed:** smoother pinch-zoom on iOS Safari (gesture-time transition / backdrop-filter handling)
 
 ---
 
@@ -269,7 +285,10 @@ Yes. MIT license.
 `init({ imageSelector: 'img[data-gallery]', imageUrlAttribute: 'data-gallery' })`.
 
 **Open from a text link?**  
-Yes. Use `<a href="full.jpg" data-lightbox="full.jpg">…</a>` and `init({ imageSelector: 'a[data-lightbox]' })`. Mix with images via `'img[data-lightbox], a[data-lightbox]'`.
+Yes. Use `<a href="full.jpg" data-lightbox="full.jpg">…</a>` and `init({ imageSelector: 'a[data-lightbox]' })`. Mix with images via `'img[data-lightbox], a[data-lightbox]'`. Default `init()` only matches images.
+
+**Does pinch-zoom also zoom the web page?**  
+No (1.2.0+). While the lightbox is open, pinch/pan zooms only the lightbox image; the page behind stays put.
 
 **Browser support?**  
 Chrome 61+, Firefox 60+, Safari 10.1+, Edge 79+.
@@ -280,8 +299,9 @@ Chrome 61+, Firefox 60+, Safari 10.1+, Edge 79+.
 
 - Exports: `init`, `initLiteLight`
 - UMD global: `LiteLight`
-- Classes: `lite-light`, `lite-light-active`, `lite-light-prev`, `lite-light-next`, `lite-light-close`, `lite-light-button`, `lite-light-fade-in`, `lite-light-fade-out`
+- Classes: `lite-light`, `lite-light-active`, `lite-light-prev`, `lite-light-next`, `lite-light-close`, `lite-light-button`, `lite-light-zooming`, `lite-light-gesture`, `lite-light-fade-in`, `lite-light-fade-out`
 - Default attribute: `data-lightbox`
+- Default `imageSelector`: `img[data-lightbox]` (opt in for text links)
 
 ---
 

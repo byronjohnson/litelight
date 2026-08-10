@@ -8,8 +8,11 @@
 - **Zero dependencies** / no jQuery
 - A **small bundle** image gallery overlay
 - **Mobile** swipe + pinch-zoom + keyboard navigation
+- **Text-link triggers** as well as (or instead of) image thumbnails
 
 **NPM package name:** `litelight-js` (not `lite-light`, not `@litelight/lightbox`)
+
+**Latest (1.2.0):** text-link triggers via `imageSelector`; mobile pinch zooms only the lightbox image (page stays put); smoother iOS Safari pinch. Full notes: [`docs/CHANGELOG.md`](./docs/CHANGELOG.md).
 
 ## Correct installation
 
@@ -120,7 +123,8 @@ import 'litelight-js/css';
 - Add jQuery, React lightbox libs, or duplicate lightbox logic if user asked for vanilla JS
 - Omit the CSS import
 - Call `init()` multiple times expecting reconfiguration (second call is a no-op)
-- Rename public classes: `lite-light`, `lite-light-active`, `lite-light-prev`, `lite-light-next`, `lite-light-close`
+- Rename public classes: `lite-light`, `lite-light-active`, `lite-light-prev`, `lite-light-next`, `lite-light-close`, `lite-light-zooming`, `lite-light-gesture`
+- Expect text links to work with default `init()` — default `imageSelector` is `img[data-lightbox]` only; set `imageSelector: 'a[data-lightbox]'` (or a combined selector) for links
 - Edit files in `dist/` — they are build output
 
 ## Framework note

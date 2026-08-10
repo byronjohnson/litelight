@@ -8,7 +8,7 @@
 
 ## 1. What This Project Is
 
-**LiteLight** (`litelight-js`) is a **zero-dependency, vanilla JavaScript lightbox** for image galleries. Users mark thumbnail `<img>` elements with a data attribute; clicking opens a full-screen overlay with navigation, touch gestures, and keyboard support.
+**LiteLight** (`litelight-js`) is a **zero-dependency, vanilla JavaScript lightbox** for image galleries. Users mark thumbnail `<img>` elements (or, with a custom `imageSelector`, text links / other elements) with a data attribute; clicking opens a full-screen overlay with navigation, touch gestures, and keyboard support.
 
 | Property | Value |
 |---|---|
@@ -228,7 +228,7 @@ Navigation wraps circularly within the gallery array.
 | Single-finger drag (scale > 1) | Pan image |
 | Release near 1× scale | Smooth snap back to exactly 1× |
 
-Zoom transforms applied via `transform: scale() translate()` with `requestAnimationFrame` batching (`scheduleZoomUpdate`). `will-change: transform` is scoped to `.lite-light-zooming` during active pinch/pan only. Browser page zoom is blocked while open via `touch-action: none` on `.lite-light-active`, non-passive `touchmove` `preventDefault` during pinch/pan, and Safari `gesturestart`/`gesturechange` prevention.
+Zoom transforms applied via `transform: scale() translate3d()` with `requestAnimationFrame` batching (`scheduleZoomUpdate`). During active pinch/pan: `.lite-light-zooming` disables transform transitions + sets `will-change`; `.lite-light-gesture` on the overlay drops `backdrop-filter` for iOS smoothness. Browser page zoom is blocked while open via `touch-action: none` on `.lite-light-active`, non-passive `touchmove` `preventDefault` during pinch/pan, and Safari `gesturestart`/`gesturechange` prevention.
 
 ### Body scroll lock
 
@@ -252,14 +252,15 @@ File: `lite-light.css` — uses **native CSS nesting** (`&` syntax). Processed a
 | Class | Role |
 |---|---|
 | `.lite-light` | Fixed full-viewport overlay; hidden by default; CSS variable host |
-| `.lite-light-active` | Visible state (opacity, pointer-events) |
+| `.lite-light-active` | Visible state (opacity, pointer-events, `touch-action: none`) |
 | `.lite-light-loading` | Shows spinner (`::after`) during image decode/load |
 | `.lite-light-button` | 44×44px min touch targets |
 | `.lite-light-prev` / `.lite-light-next` | Arrow navigation (hidden on mobile) |
 | `.lite-light-close` | X button (CSS-drawn bars) |
 | `.lite-light-fade-in` / `-fade-out` | Legacy keyframe animations (frozen; integrators may target) |
 | `.lite-light-entering` / `-entered` | Scale-in entrance on open (internal) |
-| `.lite-light-zooming` | Active pinch/pan; enables `will-change: transform` |
+| `.lite-light-zooming` | Active pinch/pan on image; disables transform transition + `will-change` |
+| `.lite-light-gesture` | Active pinch/pan on overlay; drops `backdrop-filter` during gesture |
 | `.lite-light-no-transform-transition` | Instant transform reset (internal) |
 | `.lite-light::after` | Loading spinner (visible only when `.lite-light-loading`) |
 
@@ -377,7 +378,8 @@ Manual test checklist after changes:
 - [ ] Escape and background click close lightbox
 - [ ] Body scroll restored to previous position after close
 - [ ] Mobile: swipe navigates; buttons hidden
-- [ ] Mobile: pinch zoom and pan work; swipe ignored when zoomed
+- [ ] Mobile: pinch zoom and pan work; swipe ignored when zoomed; page behind does not zoom
+- [ ] Text-link trigger with custom `imageSelector` opens lightbox; plain click does not navigate away
 - [ ] Tab focus trapped within lightbox controls
 - [ ] `prefers-reduced-motion` respected
 - [ ] Multiple galleries / re-init behavior acceptable

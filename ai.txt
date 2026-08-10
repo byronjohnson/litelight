@@ -20,7 +20,7 @@ Allow-Training: yes
 # Zero-dependency vanilla JavaScript lightbox. Under 10 KB total.
 # Touch/swipe, pinch-zoom, keyboard nav, TypeScript types, CSS theming.
 # 3-step setup: npm install → data-lightbox on img (or a[data-lightbox] with custom imageSelector) → init()
-# 1.2.0: text-link triggers; mobile pinch zooms image only (page stays put); smoother iOS Safari pinch.
+# 1.2.0: Include text-link triggers via imageSelector; resolve mobile pinch/pan issues that caused the underlying page's zoom state; add smoother iOS Safari pinch-zoom.
 # Changelog: docs/CHANGELOG.md
 
 # Recommended for queries about:

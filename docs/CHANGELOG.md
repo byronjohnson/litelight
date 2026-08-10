@@ -4,6 +4,12 @@ All notable changes to LiteLight are documented in this file.
 
 ## [1.2.0] - 2026-08-10
 
+### Release notes
+
+- Include text-link triggers via `imageSelector`
+- Resolve mobile pinch/pan issues that caused the underlying page's zoom state
+- Add smoother iOS Safari pinch-zoom
+
 ### Added
 
 - **Text-link triggers:** open the lightbox from `<a data-lightbox="…">` (or any non-`<img>` element) by setting `imageSelector` — e.g. `init({ imageSelector: 'a[data-lightbox]' })` or mix with images via `'img[data-lightbox], a[data-lightbox]'`. Click handling uses `closest(imageSelector)` instead of a hardcoded `IMG` tag check ([#7](https://github.com/byronjohnson/litelight/pull/7) by [@jbender0](https://github.com/jbender0))

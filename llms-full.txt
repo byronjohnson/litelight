@@ -235,12 +235,11 @@ Works with React, Vue, Angular, Svelte, Astro, plain HTML.
 
 ## Changelog (1.2.0)
 
-Full history: `docs/CHANGELOG.md` in the package / repo.
+- Include text-link triggers via `imageSelector`
+- Resolve mobile pinch/pan issues that caused the underlying page's zoom state
+- Add smoother iOS Safari pinch-zoom
 
-- **Added:** text-link (and other non-`<img>`) triggers via `imageSelector` + `closest()` click matching ([#7](https://github.com/byronjohnson/litelight/pull/7))
-- **Fixed:** `<a>` plain-click `preventDefault` with modifier-click native behavior preserved
-- **Fixed:** mobile pinch/pan no longer zooms the page behind the lightbox
-- **Fixed:** smoother pinch-zoom on iOS Safari (gesture-time transition / backdrop-filter handling)
+Full history: `docs/CHANGELOG.md` in the package / repo.
 
 ---
 

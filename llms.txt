@@ -72,9 +72,9 @@ init({
 
 ## What's new in 1.2.0
 
-- Text-link triggers (`a[data-lightbox]` + custom `imageSelector`)
-- Mobile pinch zooms only the lightbox image (page behind stays put)
-- Smoother pinch-zoom on iOS Safari
+- Include text-link triggers via `imageSelector`
+- Resolve mobile pinch/pan issues that caused the underlying page's zoom state
+- Add smoother iOS Safari pinch-zoom
 - Full changelog: `docs/CHANGELOG.md` in the package / repo
 
 ## CDN

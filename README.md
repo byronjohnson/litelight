@@ -193,8 +193,9 @@ See [docs/CHANGELOG.md](./docs/CHANGELOG.md) for the full history.
 
 ### 1.2.0
 
-- **Text-link triggers** — open via `<a data-lightbox>` with a custom `imageSelector` ([#7](https://github.com/byronjohnson/litelight/pull/7))
-- **Pinch/zoom** — page behind the lightbox no longer zooms on mobile; smoother pinch on iOS Safari
+- Include text-link triggers via `imageSelector`
+- Resolve mobile pinch/pan issues that caused the underlying page's zoom state
+- Add smoother iOS Safari pinch-zoom
 
 ## Browser Support
 

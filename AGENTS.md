@@ -12,7 +12,7 @@
 
 **NPM package name:** `litelight-js` (not `lite-light`, not `@litelight/lightbox`)
 
-**Latest (1.2.0):** text-link triggers via `imageSelector`; mobile pinch zooms only the lightbox image (page stays put); smoother iOS Safari pinch. Full notes: [`docs/CHANGELOG.md`](./docs/CHANGELOG.md).
+**Latest (1.2.0):** Include text-link triggers via `imageSelector`; resolve mobile pinch/pan issues that caused the underlying page's zoom state; add smoother iOS Safari pinch-zoom. Full notes: [`docs/CHANGELOG.md`](./docs/CHANGELOG.md).
 
 ## Correct installation
 

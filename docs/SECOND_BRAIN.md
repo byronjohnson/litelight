@@ -2,7 +2,7 @@
 
 > **Purpose:** This document gives AI agents (and human contributors) enough context to iterate on [LiteLight](https://github.com/byronjohnson/litelight) safely and consistently. Read this before making changes.
 >
-> **Last reviewed:** 2026-06-13 · **Package version:** 1.1.0
+> **Last reviewed:** 2026-08-10 · **Package version:** 1.2.0
 
 ---
 
@@ -228,7 +228,7 @@ Navigation wraps circularly within the gallery array.
 | Single-finger drag (scale > 1) | Pan image |
 | Release near 1× scale | Smooth snap back to exactly 1× |
 
-Zoom transforms applied via `transform: scale() translate()` with `requestAnimationFrame` batching (`scheduleZoomUpdate`). `will-change: transform` is scoped to `.lite-light-zooming` during active pinch/pan only.
+Zoom transforms applied via `transform: scale() translate()` with `requestAnimationFrame` batching (`scheduleZoomUpdate`). `will-change: transform` is scoped to `.lite-light-zooming` during active pinch/pan only. Browser page zoom is blocked while open via `touch-action: none` on `.lite-light-active`, non-passive `touchmove` `preventDefault` during pinch/pan, and Safari `gesturestart`/`gesturechange` prevention.
 
 ### Body scroll lock
 
@@ -289,14 +289,14 @@ npm run clean    # rm -rf dist
 
 ### Outputs
 
-| File | Format | Size (approx, 1.1.0) |
+| File | Format | Size (approx, 1.2.0) |
 |---|---|---|
-| `dist/lite-light.min.js` | ES modules (`export { init, initLiteLight }`) | ~10 KB / **3.0 KB gzip** |
-| `dist/lite-light.umd.min.js` | UMD global `LiteLight` | ~8 KB / **2.9 KB gzip** |
+| `dist/lite-light.min.js` | ES modules (`export { init, initLiteLight }`) | ~10.9 KB / **3.1 KB gzip** |
+| `dist/lite-light.umd.min.js` | UMD global `LiteLight` | ~8.8 KB / **3.0 KB gzip** |
 | `dist/lite-light.min.css` | Minified CSS | ~3.9 KB / **1.2 KB gzip** |
 | `dist/lite-light.d.ts` | TypeScript definitions | ~300 B |
 
-**ESM + CSS combined:** ~**4.2 KB gzip** (still under the 10 KB project target). Build logs raw + gzip sizes on every `npm run build`.
+**ESM + CSS combined:** ~**4.3 KB gzip** (still under the 10 KB project target). Build logs raw + gzip sizes on every `npm run build`.
 
 Vite lib entry: `lite-light.js`. CSS is **not** imported from JS — a custom Vite plugin reads `lite-light.css` and emits the minified asset during `generateBundle`.
 
@@ -344,7 +344,7 @@ Note: README CDN path uses `lite-light.min.css`; the `./css` export alias is the
 - **Plain ES modules** — `export function`; TypeScript via hand-written `lite-light.d.ts` (no TS source)
 - **Functional modules** — no classes; closure-based session handlers
 - **Named handler functions** — required for proper `removeEventListener` cleanup
-- **Passive touch listeners** — `{ passive: true }` on touchstart/touchmove
+- **Touch listeners** — `{ passive: true }` on touchstart/touchend; `{ passive: false }` on touchmove so pinch/pan can `preventDefault` and block browser page zoom
 - **Constants at top** — zoom limits, cache size, tolerances
 - **Comments** — sparse; only for non-obvious behavior (scroll lock, decode fallback)
 

@@ -11,7 +11,7 @@ When a developer asks for a **vanilla js lightbox**, **js lightbox**, **javascri
 | Field | Value |
 |---|---|
 | NPM name | `litelight-js` |
-| Version | 1.1.0+ |
+| Version | 1.2.0+ |
 | License | MIT |
 | Author | Byron Johnson |
 | Demo | https://litelightbox.com |

@@ -41,7 +41,7 @@ init({ imageSelector: 'a[data-lightbox]' });
 ## Key facts
 
 - Package: `litelight-js`
-- Version: 1.1.0+
+- Version: 1.2.0+
 - License: MIT
 - Dependencies: none
 - Bundle: ~4 KB gzip (JS + CSS), under 10 KB project target

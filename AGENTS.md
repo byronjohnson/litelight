@@ -54,7 +54,7 @@ Mix images and links in one gallery:
 init({ imageSelector: 'img[data-lightbox], a[data-lightbox]' });
 ```
 
-Prefer keeping a real `href` on the link (same URL as `data-lightbox`) so the link still works if JS fails.
+Prefer keeping a real `href` on the link (same URL as `data-lightbox`) so the link still works if JS fails. Plain clicks open the lightbox only (`preventDefault`). Cmd/Ctrl-click (and other modified clicks) still open the lightbox and leave native link behavior intact (e.g. open in a new tab).
 
 ## Configuration (optional)
 

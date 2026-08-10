@@ -2,11 +2,17 @@
 
 All notable changes to LiteLight are documented in this file.
 
-## [Unreleased]
+## [1.2.0] - 2026-08-10
 
 ### Added
 
 - Support for non-`<img>` triggers (e.g. text links) via `imageSelector` — click handling uses `closest()` instead of a hardcoded `IMG` tag check ([#7](https://github.com/byronjohnson/litelight/pull/7) by [@jbender0](https://github.com/jbender0))
+
+### Fixed
+
+- Plain clicks on `<a>` triggers call `preventDefault()` so navigation does not race the lightbox; modifier clicks (Cmd/Ctrl/Shift/Alt) still open the lightbox and keep native link behavior (e.g. new tab)
+- Mobile pinch/pan no longer zooms the page behind the lightbox (`touch-action: none` on the active overlay + non-passive `touchmove` `preventDefault` during pinch/pan)
+- Smoother pinch-zoom on iOS Safari (disable transform transitions and backdrop-filter during the gesture; remove conflicting Safari `transform` override)
 
 ## [1.1.0] - 2026-06-13
 

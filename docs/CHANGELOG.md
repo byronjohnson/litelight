@@ -2,6 +2,12 @@
 
 All notable changes to LiteLight are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Support for non-`<img>` triggers (e.g. text links) via `imageSelector` — click handling uses `closest()` instead of a hardcoded `IMG` tag check ([#7](https://github.com/byronjohnson/litelight/pull/7) by [@jbender0](https://github.com/jbender0))
+
 ## [1.1.0] - 2026-06-13
 
 ### Changed

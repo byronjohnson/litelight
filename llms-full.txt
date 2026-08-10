@@ -66,6 +66,19 @@ Always import **both** the module and stylesheet. The CSS is not bundled into JS
 
 The `data-lightbox` value is the full-resolution image URL. The `src` is typically a thumbnail.
 
+**Text-link triggers:** Put `data-lightbox` on an `<a>` and set `imageSelector` accordingly (default matches images only):
+
+```html
+<a href="full-size.jpg" data-lightbox="full-size.jpg">View full image</a>
+```
+
+```javascript
+init({ imageSelector: 'a[data-lightbox]' });
+// Or mix: init({ imageSelector: 'img[data-lightbox], a[data-lightbox]' });
+```
+
+Keep a real `href` for progressive enhancement when JS is unavailable.
+
 ### 3. Initialize once
 
 ```javascript
@@ -92,8 +105,8 @@ import { init, initLiteLight } from 'litelight-js';
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `imageSelector` | string | `'img[data-lightbox]'` | CSS selector for gallery images |
-| `imageUrlAttribute` | string | `'data-lightbox'` | Attribute holding full-size URL |
+| `imageSelector` | string | `'img[data-lightbox]'` | CSS selector for gallery triggers (`<img>`, `<a>`, or both) |
+| `imageUrlAttribute` | string | `'data-lightbox'` | Attribute on the trigger holding the full-size image URL |
 | `lightboxClass` | string | `'lite-light'` | Root overlay class name |
 | `swipeThreshold` | number | `50` | Horizontal swipe distance (px) for mobile prev/next |
 | `fadeAnimationDuration` | number | `150` | Fade duration in ms; sets CSS `--ll-duration` on open |
@@ -172,13 +185,13 @@ Backdrop blur applies where `backdrop-filter` is supported.
 
 **Desktop:** ←/→ keys, Esc, click outside image, prev/next buttons  
 **Mobile (<768px):** swipe left/right; arrow buttons hidden; pinch-zoom enabled  
-**All:** Gallery wraps circularly; all matching `imageSelector` images on the page form one gallery
+**All:** Gallery wraps circularly; all matching `imageSelector` triggers on the page form one gallery
 
 ---
 
 ## Framework integration
 
-LiteLight uses **global click delegation** on `document`. Call `init()` once after gallery `<img>` elements exist:
+LiteLight uses **global click delegation** on `document`. Call `init()` once after gallery triggers exist:
 
 ```javascript
 // React example
@@ -254,6 +267,9 @@ Yes. MIT license.
 
 **Custom data attribute?**  
 `init({ imageSelector: 'img[data-gallery]', imageUrlAttribute: 'data-gallery' })`.
+
+**Open from a text link?**  
+Yes. Use `<a href="full.jpg" data-lightbox="full.jpg">…</a>` and `init({ imageSelector: 'a[data-lightbox]' })`. Mix with images via `'img[data-lightbox], a[data-lightbox]'`.
 
 **Browser support?**  
 Chrome 61+, Firefox 60+, Safari 10.1+, Edge 79+.

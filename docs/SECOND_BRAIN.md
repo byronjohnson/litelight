@@ -98,8 +98,8 @@ init(options?);
 
 | Option | Default | Description |
 |---|---|---|
-| `imageSelector` | `'img[data-lightbox]'` | CSS selector defining the gallery set |
-| `imageUrlAttribute` | `'data-lightbox'` | Attribute on clicked `<img>` holding full-size URL |
+| `imageSelector` | `'img[data-lightbox]'` | CSS selector defining the gallery set (images, links, or both) |
+| `imageUrlAttribute` | `'data-lightbox'` | Attribute on the clicked trigger holding the full-size URL |
 | `lightboxClass` | `'lite-light'` | Root overlay class; also used to detect existing DOM |
 | `swipeThreshold` | `50` | Horizontal swipe distance (px) to trigger prev/next |
 | `fadeAnimationDuration` | `150` | Image fade duration (ms); sets `--ll-duration` on the overlay at open |
@@ -126,14 +126,25 @@ Backdrop blur uses `@supports (backdrop-filter: blur(2px))` — falls back to so
 <img src="thumb.jpg" data-lightbox="full.jpg" alt="Description">
 ```
 
+Text-link triggers (opt-in via custom `imageSelector`):
+
+```html
+<a href="full.jpg" data-lightbox="full.jpg">View image</a>
+```
+
+```javascript
+init({ imageSelector: 'a[data-lightbox]' });
+```
+
 On click, LiteLight:
 
-1. Queries all elements matching `imageSelector`
-2. Finds the clicked image's index in that list
-3. Opens the lightbox showing the URL from `imageUrlAttribute`
-4. Wraps navigation (prev/next) within that matched set
+1. Resolves the trigger with `event.target.closest(imageSelector)`
+2. Queries all elements matching `imageSelector`
+3. Finds the clicked trigger's index in that list
+4. Opens the lightbox showing the URL from `imageUrlAttribute`
+5. Wraps navigation (prev/next) within that matched set
 
-**Gallery grouping:** All images matching `imageSelector` on the page form one gallery. There is no per-group API (e.g. `data-lightbox-group`) — use different `imageSelector` values via separate `init` calls only if you refactor init (not supported today; single init only).
+**Gallery grouping:** All elements matching `imageSelector` on the page form one gallery. There is no per-group API (e.g. `data-lightbox-group`) — use different `imageSelector` values via separate `init` calls only if you refactor init (not supported today; single init only).
 
 ---
 
@@ -385,7 +396,6 @@ Agents should be aware of these documented inconsistencies:
 | **No `destroy()` API** | Cannot reconfigure after init; listeners permanent | Add `destroy()` if hot-reload or SPA re-mount needed |
 | **Overlapping sessions** | Clicking a second image while open may stack listeners | Close existing session before opening new one |
 | **Single global gallery model** | No native support for multiple independent galleries on one page | Extend with group attribute or multiple instances |
-| **Click handler checks attribute, not selector** | Click handler tests `hasAttribute(imageUrlAttribute)` but gallery uses `imageSelector` — mismatched selectors could cause odd behavior | Align validation logic |
 | **No tests** | Regression risk on touch/zoom/scroll logic | Add Playwright or Vitest + jsdom tests for core flows |
 | **Bundle size vs 1.0.x** | 1.1.0 ESM+CSS ~4.2 KB gzip vs ~3.5 KB in 1.0.5 (aesthetic CSS + transition helpers) | Optional: trim legacy keyframe CSS in a future major |
 

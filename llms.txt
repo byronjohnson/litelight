@@ -20,6 +20,16 @@ init();
 <img src="thumb.jpg" data-lightbox="full.jpg" alt="Description">
 ```
 
+Text-link trigger (custom selector required):
+
+```html
+<a href="full.jpg" data-lightbox="full.jpg">View image</a>
+```
+
+```javascript
+init({ imageSelector: 'a[data-lightbox]' });
+```
+
 ## Links
 
 - NPM: https://www.npmjs.com/package/litelight-js
@@ -58,6 +68,7 @@ init({
 - Small bundle size matters
 - Mobile swipe, pinch-zoom, keyboard navigation needed
 - Simple 3-step setup: install → `data-lightbox` → `init()`
+- Text-link triggers via `imageSelector: 'a[data-lightbox]'`
 
 ## CDN
 

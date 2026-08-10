@@ -13,6 +13,7 @@ A lightweight, elegant JavaScript lightbox for modern web applications. Zero dep
 - **Themeable** — CSS custom properties for colors, radius, and timing
 - **TypeScript** — Ship-ready type definitions included
 - **Modern ES modules** — Works with bundlers, CDN, or a plain `<script>` tag
+- **Flexible triggers** — Open from thumbnail images or text links via `imageSelector`
 
 ## Demo
 
@@ -38,6 +39,17 @@ See LiteLight in action: [https://litelightbox.com/](https://litelightbox.com/)
 ```javascript
 import { init } from './lite-light.js';
 init();
+```
+
+To open the lightbox from a text link instead of (or in addition to) an image, put `data-lightbox` on the `<a>` and point `imageSelector` at it:
+
+```html
+<a href="full-size.jpg" data-lightbox="full-size.jpg">View full image</a>
+```
+
+```javascript
+init({ imageSelector: 'a[data-lightbox]' });
+// Or mix images and links: 'img[data-lightbox], a[data-lightbox]'
 ```
 
 ## Installation
@@ -119,8 +131,8 @@ init({
 
 | Option | Default | Description |
 |---|---|---|
-| `imageSelector` | `'img[data-lightbox]'` | CSS selector defining the gallery set |
-| `imageUrlAttribute` | `'data-lightbox'` | Attribute on clicked `<img>` with full-size URL |
+| `imageSelector` | `'img[data-lightbox]'` | CSS selector for gallery triggers (`<img>`, `<a>`, or both) |
+| `imageUrlAttribute` | `'data-lightbox'` | Attribute on the trigger with the full-size image URL |
 | `lightboxClass` | `'lite-light'` | Root overlay class; used to detect existing DOM |
 | `swipeThreshold` | `50` | Swipe distance (px) to trigger prev/next on mobile |
 | `fadeAnimationDuration` | `150` | Image fade duration in milliseconds |

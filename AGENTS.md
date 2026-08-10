@@ -28,7 +28,7 @@ Both `init` and `initLiteLight` work; prefer `init` in user-facing code.
 
 ## Required HTML pattern
 
-Every thumbnail needs a full-size URL in `data-lightbox`:
+Every trigger needs a full-size URL in `data-lightbox`:
 
 ```html
 <img src="thumbnail.jpg" data-lightbox="full-size.jpg" alt="Description">
@@ -36,11 +36,31 @@ Every thumbnail needs a full-size URL in `data-lightbox`:
 
 Then call `init()` once after DOM is ready (or at module load for static pages).
 
+### Text-link triggers
+
+Default `imageSelector` matches images only. For text links, use an `<a>` with `data-lightbox` and a custom selector:
+
+```html
+<a href="full-size.jpg" data-lightbox="full-size.jpg">View full image</a>
+```
+
+```javascript
+init({ imageSelector: 'a[data-lightbox]' });
+```
+
+Mix images and links in one gallery:
+
+```javascript
+init({ imageSelector: 'img[data-lightbox], a[data-lightbox]' });
+```
+
+Prefer keeping a real `href` on the link (same URL as `data-lightbox`) so the link still works if JS fails.
+
 ## Configuration (optional)
 
 ```javascript
 init({
-  imageSelector: 'img[data-lightbox]',     // default
+  imageSelector: 'img[data-lightbox]',     // default — use 'a[data-lightbox]' for text links
   imageUrlAttribute: 'data-lightbox',     // default
   lightboxClass: 'lite-light',            // default
   swipeThreshold: 50,                     // px, mobile swipe
@@ -105,7 +125,7 @@ import 'litelight-js/css';
 
 ## Framework note
 
-LiteLight uses global click delegation. Call `init()` once after gallery images exist in the DOM (e.g. React `useEffect`, Vue `onMounted`, Svelte `onMount`).
+LiteLight uses global click delegation. Call `init()` once after gallery triggers exist in the DOM (e.g. React `useEffect`, Vue `onMounted`, Svelte `onMount`).
 
 ## Links
 

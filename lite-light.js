@@ -119,7 +119,9 @@ function getTouchCenter(touches) {
 }
 
 function applyZoomTransform(imageElement) {
-  imageElement.style.transform = `scale(${zoomState.scale}) translate(${zoomState.x}px, ${zoomState.y}px)`;
+  // translate3d keeps the same scale-then-translate math while promoting a GPU layer (helps iOS)
+  imageElement.style.transform =
+    `scale(${zoomState.scale}) translate3d(${zoomState.x}px, ${zoomState.y}px, 0)`;
 }
 
 function scheduleZoomUpdate(imageElement) {
@@ -167,6 +169,8 @@ function waitTransition(element, propertyName, durationMs, callback) {
 
 function setImageZoomingActive(imageElement, active) {
   imageElement.classList.toggle('lite-light-zooming', active);
+  const overlay = imageElement.parentElement;
+  if (overlay) overlay.classList.toggle('lite-light-gesture', active);
 }
 
 function whenImageReady(img, callback) {
@@ -213,10 +217,24 @@ export function initLiteLight(options = {}) {
   const closeButton = lightbox.querySelector('.lite-light-close');
 
   document.addEventListener('click', (e) => {
-    if (e.target.tagName !== 'IMG' || !e.target.hasAttribute(config.imageUrlAttribute)) return;
+    // Trigger element may be an <img> (default) or any element matched by a
+    // custom imageSelector (e.g. 'a[data-lightbox]' for text-link triggers)
+    // — walk up from the click target instead of hardcoding tagName === IMG.
+    const trigger = e.target.closest(config.imageSelector);
+    if (!trigger || !trigger.hasAttribute(config.imageUrlAttribute)) return;
+    // Allow modified clicks (new tab / new window) to keep native <a> behavior
+    if (
+      trigger.tagName === 'A' &&
+      !e.metaKey &&
+      !e.ctrlKey &&
+      !e.shiftKey &&
+      !e.altKey
+    ) {
+      e.preventDefault();
+    }
 
     const images = Array.from(document.querySelectorAll(config.imageSelector));
-    let currentIndex = images.findIndex(img => img === e.target);
+    let currentIndex = images.findIndex(img => img === trigger);
     let isNavigating = false;
 
     function preloadAdjacentImages(currentIdx) {
@@ -331,6 +349,10 @@ export function initLiteLight(options = {}) {
 
     function handleTouchMove(e) {
       const touches = e.touches;
+      // Non-passive listener: block browser page zoom/pan while we handle image gestures
+      if (touches.length >= 2 || zoomState.scale > MIN_ZOOM) {
+        e.preventDefault();
+      }
 
       if (touches.length === 2) {
         const currentDistance = getTouchDistance(touches);
@@ -466,6 +488,11 @@ export function initLiteLight(options = {}) {
       performAction('close');
     }
 
+    // Safari legacy gesture events — block page pinch-zoom while the overlay handles it
+    function preventSafariPageZoom(e) {
+      e.preventDefault();
+    }
+
     function closeLightbox() {
       lightbox.classList.remove('lite-light-active', 'lite-light-loading');
       resetZoom(lightboxImage, true);
@@ -480,6 +507,8 @@ export function initLiteLight(options = {}) {
       lightbox.removeEventListener('touchstart', handleTouchStart);
       lightbox.removeEventListener('touchmove', handleTouchMove);
       lightbox.removeEventListener('touchend', handleTouchEnd);
+      lightbox.removeEventListener('gesturestart', preventSafariPageZoom);
+      lightbox.removeEventListener('gesturechange', preventSafariPageZoom);
       prevButton.removeEventListener('click', handleControlClick);
       nextButton.removeEventListener('click', handleControlClick);
       closeButton.removeEventListener('click', handleControlClick);
@@ -518,8 +547,11 @@ export function initLiteLight(options = {}) {
     });
 
     lightbox.addEventListener('touchstart', handleTouchStart, { passive: true });
-    lightbox.addEventListener('touchmove', handleTouchMove, { passive: true });
+    // touchmove must be non-passive so preventDefault can block browser page zoom
+    lightbox.addEventListener('touchmove', handleTouchMove, { passive: false });
     lightbox.addEventListener('touchend', handleTouchEnd, { passive: true });
+    lightbox.addEventListener('gesturestart', preventSafariPageZoom, { passive: false });
+    lightbox.addEventListener('gesturechange', preventSafariPageZoom, { passive: false });
 
     document.addEventListener('keydown', handleKeyboardNav);
     document.addEventListener('keydown', handleFocusTrap);

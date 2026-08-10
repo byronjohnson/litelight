@@ -2,13 +2,13 @@
 
 > **Purpose:** This document gives AI agents (and human contributors) enough context to iterate on [LiteLight](https://github.com/byronjohnson/litelight) safely and consistently. Read this before making changes.
 >
-> **Last reviewed:** 2026-06-13 · **Package version:** 1.1.0
+> **Last reviewed:** 2026-08-10 · **Package version:** 1.2.0
 
 ---
 
 ## 1. What This Project Is
 
-**LiteLight** (`litelight-js`) is a **zero-dependency, vanilla JavaScript lightbox** for image galleries. Users mark thumbnail `<img>` elements with a data attribute; clicking opens a full-screen overlay with navigation, touch gestures, and keyboard support.
+**LiteLight** (`litelight-js`) is a **zero-dependency, vanilla JavaScript lightbox** for image galleries. Users mark thumbnail `<img>` elements (or, with a custom `imageSelector`, text links / other elements) with a data attribute; clicking opens a full-screen overlay with navigation, touch gestures, and keyboard support.
 
 | Property | Value |
 |---|---|
@@ -98,8 +98,8 @@ init(options?);
 
 | Option | Default | Description |
 |---|---|---|
-| `imageSelector` | `'img[data-lightbox]'` | CSS selector defining the gallery set |
-| `imageUrlAttribute` | `'data-lightbox'` | Attribute on clicked `<img>` holding full-size URL |
+| `imageSelector` | `'img[data-lightbox]'` | CSS selector defining the gallery set (images, links, or both) |
+| `imageUrlAttribute` | `'data-lightbox'` | Attribute on the clicked trigger holding the full-size URL |
 | `lightboxClass` | `'lite-light'` | Root overlay class; also used to detect existing DOM |
 | `swipeThreshold` | `50` | Horizontal swipe distance (px) to trigger prev/next |
 | `fadeAnimationDuration` | `150` | Image fade duration (ms); sets `--ll-duration` on the overlay at open |
@@ -126,14 +126,25 @@ Backdrop blur uses `@supports (backdrop-filter: blur(2px))` — falls back to so
 <img src="thumb.jpg" data-lightbox="full.jpg" alt="Description">
 ```
 
+Text-link triggers (opt-in via custom `imageSelector`):
+
+```html
+<a href="full.jpg" data-lightbox="full.jpg">View image</a>
+```
+
+```javascript
+init({ imageSelector: 'a[data-lightbox]' });
+```
+
 On click, LiteLight:
 
-1. Queries all elements matching `imageSelector`
-2. Finds the clicked image's index in that list
-3. Opens the lightbox showing the URL from `imageUrlAttribute`
-4. Wraps navigation (prev/next) within that matched set
+1. Resolves the trigger with `event.target.closest(imageSelector)`
+2. Queries all elements matching `imageSelector`
+3. Finds the clicked trigger's index in that list
+4. Opens the lightbox showing the URL from `imageUrlAttribute`
+5. Wraps navigation (prev/next) within that matched set
 
-**Gallery grouping:** All images matching `imageSelector` on the page form one gallery. There is no per-group API (e.g. `data-lightbox-group`) — use different `imageSelector` values via separate `init` calls only if you refactor init (not supported today; single init only).
+**Gallery grouping:** All elements matching `imageSelector` on the page form one gallery. There is no per-group API (e.g. `data-lightbox-group`) — use different `imageSelector` values via separate `init` calls only if you refactor init (not supported today; single init only).
 
 ---
 
@@ -217,7 +228,7 @@ Navigation wraps circularly within the gallery array.
 | Single-finger drag (scale > 1) | Pan image |
 | Release near 1× scale | Smooth snap back to exactly 1× |
 
-Zoom transforms applied via `transform: scale() translate()` with `requestAnimationFrame` batching (`scheduleZoomUpdate`). `will-change: transform` is scoped to `.lite-light-zooming` during active pinch/pan only.
+Zoom transforms applied via `transform: scale() translate3d()` with `requestAnimationFrame` batching (`scheduleZoomUpdate`). During active pinch/pan: `.lite-light-zooming` disables transform transitions + sets `will-change`; `.lite-light-gesture` on the overlay drops `backdrop-filter` for iOS smoothness. Browser page zoom is blocked while open via `touch-action: none` on `.lite-light-active`, non-passive `touchmove` `preventDefault` during pinch/pan, and Safari `gesturestart`/`gesturechange` prevention.
 
 ### Body scroll lock
 
@@ -241,14 +252,15 @@ File: `lite-light.css` — uses **native CSS nesting** (`&` syntax). Processed a
 | Class | Role |
 |---|---|
 | `.lite-light` | Fixed full-viewport overlay; hidden by default; CSS variable host |
-| `.lite-light-active` | Visible state (opacity, pointer-events) |
+| `.lite-light-active` | Visible state (opacity, pointer-events, `touch-action: none`) |
 | `.lite-light-loading` | Shows spinner (`::after`) during image decode/load |
 | `.lite-light-button` | 44×44px min touch targets |
 | `.lite-light-prev` / `.lite-light-next` | Arrow navigation (hidden on mobile) |
 | `.lite-light-close` | X button (CSS-drawn bars) |
 | `.lite-light-fade-in` / `-fade-out` | Legacy keyframe animations (frozen; integrators may target) |
 | `.lite-light-entering` / `-entered` | Scale-in entrance on open (internal) |
-| `.lite-light-zooming` | Active pinch/pan; enables `will-change: transform` |
+| `.lite-light-zooming` | Active pinch/pan on image; disables transform transition + `will-change` |
+| `.lite-light-gesture` | Active pinch/pan on overlay; drops `backdrop-filter` during gesture |
 | `.lite-light-no-transform-transition` | Instant transform reset (internal) |
 | `.lite-light::after` | Loading spinner (visible only when `.lite-light-loading`) |
 
@@ -278,14 +290,14 @@ npm run clean    # rm -rf dist
 
 ### Outputs
 
-| File | Format | Size (approx, 1.1.0) |
+| File | Format | Size (approx, 1.2.0) |
 |---|---|---|
-| `dist/lite-light.min.js` | ES modules (`export { init, initLiteLight }`) | ~10 KB / **3.0 KB gzip** |
-| `dist/lite-light.umd.min.js` | UMD global `LiteLight` | ~8 KB / **2.9 KB gzip** |
+| `dist/lite-light.min.js` | ES modules (`export { init, initLiteLight }`) | ~10.9 KB / **3.1 KB gzip** |
+| `dist/lite-light.umd.min.js` | UMD global `LiteLight` | ~8.8 KB / **3.0 KB gzip** |
 | `dist/lite-light.min.css` | Minified CSS | ~3.9 KB / **1.2 KB gzip** |
 | `dist/lite-light.d.ts` | TypeScript definitions | ~300 B |
 
-**ESM + CSS combined:** ~**4.2 KB gzip** (still under the 10 KB project target). Build logs raw + gzip sizes on every `npm run build`.
+**ESM + CSS combined:** ~**4.3 KB gzip** (still under the 10 KB project target). Build logs raw + gzip sizes on every `npm run build`.
 
 Vite lib entry: `lite-light.js`. CSS is **not** imported from JS — a custom Vite plugin reads `lite-light.css` and emits the minified asset during `generateBundle`.
 
@@ -333,7 +345,7 @@ Note: README CDN path uses `lite-light.min.css`; the `./css` export alias is the
 - **Plain ES modules** — `export function`; TypeScript via hand-written `lite-light.d.ts` (no TS source)
 - **Functional modules** — no classes; closure-based session handlers
 - **Named handler functions** — required for proper `removeEventListener` cleanup
-- **Passive touch listeners** — `{ passive: true }` on touchstart/touchmove
+- **Touch listeners** — `{ passive: true }` on touchstart/touchend; `{ passive: false }` on touchmove so pinch/pan can `preventDefault` and block browser page zoom
 - **Constants at top** — zoom limits, cache size, tolerances
 - **Comments** — sparse; only for non-obvious behavior (scroll lock, decode fallback)
 
@@ -366,7 +378,8 @@ Manual test checklist after changes:
 - [ ] Escape and background click close lightbox
 - [ ] Body scroll restored to previous position after close
 - [ ] Mobile: swipe navigates; buttons hidden
-- [ ] Mobile: pinch zoom and pan work; swipe ignored when zoomed
+- [ ] Mobile: pinch zoom and pan work; swipe ignored when zoomed; page behind does not zoom
+- [ ] Text-link trigger with custom `imageSelector` opens lightbox; plain click does not navigate away
 - [ ] Tab focus trapped within lightbox controls
 - [ ] `prefers-reduced-motion` respected
 - [ ] Multiple galleries / re-init behavior acceptable
@@ -385,7 +398,6 @@ Agents should be aware of these documented inconsistencies:
 | **No `destroy()` API** | Cannot reconfigure after init; listeners permanent | Add `destroy()` if hot-reload or SPA re-mount needed |
 | **Overlapping sessions** | Clicking a second image while open may stack listeners | Close existing session before opening new one |
 | **Single global gallery model** | No native support for multiple independent galleries on one page | Extend with group attribute or multiple instances |
-| **Click handler checks attribute, not selector** | Click handler tests `hasAttribute(imageUrlAttribute)` but gallery uses `imageSelector` — mismatched selectors could cause odd behavior | Align validation logic |
 | **No tests** | Regression risk on touch/zoom/scroll logic | Add Playwright or Vitest + jsdom tests for core flows |
 | **Bundle size vs 1.0.x** | 1.1.0 ESM+CSS ~4.2 KB gzip vs ~3.5 KB in 1.0.5 (aesthetic CSS + transition helpers) | Optional: trim legacy keyframe CSS in a future major |
 

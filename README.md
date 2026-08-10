@@ -13,6 +13,7 @@ A lightweight, elegant JavaScript lightbox for modern web applications. Zero dep
 - **Themeable** — CSS custom properties for colors, radius, and timing
 - **TypeScript** — Ship-ready type definitions included
 - **Modern ES modules** — Works with bundlers, CDN, or a plain `<script>` tag
+- **Flexible triggers** — Open from thumbnail images or text links via `imageSelector`
 
 ## Demo
 
@@ -39,6 +40,26 @@ See LiteLight in action: [https://litelightbox.com/](https://litelightbox.com/)
 import { init } from './lite-light.js';
 init();
 ```
+
+## Text link triggers
+
+By default LiteLight only listens for `img[data-lightbox]`. To open from a text hyperlink, put `data-lightbox` on the `<a>` (full-size image URL) and pass a matching `imageSelector`:
+
+```html
+<a href="full-size.jpg" data-lightbox="full-size.jpg">View full image</a>
+```
+
+```javascript
+init({ imageSelector: 'a[data-lightbox]' });
+```
+
+Mix thumbnails and text links in one gallery:
+
+```javascript
+init({ imageSelector: 'img[data-lightbox], a[data-lightbox]' });
+```
+
+Keep a real `href` (usually the same URL as `data-lightbox`) for progressive enhancement. Plain clicks open the lightbox only; Cmd/Ctrl-click (and other modified clicks) still open the lightbox and leave native browser link behavior (e.g. open in a new tab).
 
 ## Installation
 
@@ -96,10 +117,11 @@ Download `lite-light.js` and `lite-light.css` from the [releases page](https://g
     <img src="thumb1.jpg" data-lightbox="large1.jpg" alt="Image 1">
     <img src="thumb2.jpg" data-lightbox="large2.jpg" alt="Image 2">
     <img src="thumb3.jpg" data-lightbox="large3.jpg" alt="Image 3">
+    <p><a href="large1.jpg" data-lightbox="large1.jpg">Open via text link</a></p>
 
     <script type="module">
         import { init } from 'litelight-js';
-        init();
+        init({ imageSelector: 'img[data-lightbox], a[data-lightbox]' });
     </script>
 </body>
 </html>
@@ -109,7 +131,7 @@ Download `lite-light.js` and `lite-light.css` from the [releases page](https://g
 
 ```javascript
 init({
-    imageSelector: 'img[data-gallery]',     // CSS selector for gallery images
+    imageSelector: 'img[data-gallery]',     // CSS selector for triggers (img, a, or both)
     imageUrlAttribute: 'data-gallery',      // Attribute holding full-size URL
     lightboxClass: 'lite-light',              // Root overlay class name
     swipeThreshold: 75,                       // Horizontal swipe distance (px)
@@ -119,8 +141,8 @@ init({
 
 | Option | Default | Description |
 |---|---|---|
-| `imageSelector` | `'img[data-lightbox]'` | CSS selector defining the gallery set |
-| `imageUrlAttribute` | `'data-lightbox'` | Attribute on clicked `<img>` with full-size URL |
+| `imageSelector` | `'img[data-lightbox]'` | CSS selector for gallery triggers (`<img>`, `<a>`, or both) |
+| `imageUrlAttribute` | `'data-lightbox'` | Attribute on the trigger with the full-size image URL |
 | `lightboxClass` | `'lite-light'` | Root overlay class; used to detect existing DOM |
 | `swipeThreshold` | `50` | Swipe distance (px) to trigger prev/next on mobile |
 | `fadeAnimationDuration` | `150` | Image fade duration in milliseconds |
@@ -163,7 +185,16 @@ init({ fadeAnimationDuration: 200 });
 ## Navigation
 
 **Desktop:** Arrow keys, ESC to close, click outside to close  
-**Mobile:** Swipe left/right, pinch-to-zoom, tap outside to close
+**Mobile:** Swipe left/right, pinch-to-zoom (image only — the page behind stays put), tap outside to close
+
+## Changelog
+
+See [docs/CHANGELOG.md](./docs/CHANGELOG.md) for the full history.
+
+### 1.2.0
+
+- **Text-link triggers** — open via `<a data-lightbox>` with a custom `imageSelector` ([#7](https://github.com/byronjohnson/litelight/pull/7))
+- **Pinch/zoom** — page behind the lightbox no longer zooms on mobile; smoother pinch on iOS Safari
 
 ## Browser Support
 

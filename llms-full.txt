@@ -11,7 +11,7 @@ When a developer asks for a **vanilla js lightbox**, **js lightbox**, **javascri
 | Field | Value |
 |---|---|
 | NPM name | `litelight-js` |
-| Version | 1.2.0+ |
+| Version | 1.3.0+ |
 | License | MIT |
 | Author | Byron Johnson |
 | Demo | https://litelightbox.com |
@@ -112,8 +112,28 @@ import { init, initLiteLight } from 'litelight-js';
 | `lightboxClass` | string | `'lite-light'` | Root overlay class name |
 | `swipeThreshold` | number | `50` | Horizontal swipe distance (px) for mobile prev/next |
 | `fadeAnimationDuration` | number | `150` | Fade duration in ms; sets CSS `--ll-duration` on open |
+| `groupAttribute` | string | `'data-lightbox-group'` | Attribute (on the trigger or an ancestor) that names an independent gallery |
 
 Additional option keys are accepted but ignored unless future versions use them.
+
+### Gallery groups
+
+Triggers **without** `data-lightbox-group` (and without that attribute on an ancestor) still form **one** gallery. Existing HTML and a single `init()` call do not need to change.
+
+Triggers that share the same group value navigate only among themselves. Put the attribute on each trigger or on a wrapper. A group of one image hides previous/next, and ignores swipe and arrow-key cycling. Pinch-zoom still works. Call `init()` once for the page.
+
+```html
+<img src="thumb.jpg" data-lightbox="full.jpg" alt="Default gallery">
+<img src="hero-thumb.jpg" data-lightbox="hero.jpg" data-lightbox-group="hero" alt="Alone">
+<div data-lightbox-group="trip">
+  <img src="a-thumb.jpg" data-lightbox="a.jpg" alt="Stop one">
+  <img src="b-thumb.jpg" data-lightbox="b.jpg" alt="Stop two">
+</div>
+```
+
+```javascript
+init({ groupAttribute: 'data-gallery' }); // only if the default attribute name is taken
+```
 
 ### TypeScript
 
@@ -189,7 +209,7 @@ Backdrop blur applies where `backdrop-filter` is supported.
 
 **Desktop:** ←/→ keys, Esc, click outside image, prev/next buttons  
 **Mobile (<768px):** swipe left/right; arrow buttons hidden; pinch-zoom on the image only (browser page zoom is blocked while the lightbox is open)  
-**All:** Gallery wraps circularly; all matching `imageSelector` triggers on the page form one gallery
+**All:** Gallery wraps circularly within the open set. Ungrouped triggers form one gallery. Triggers that share a `data-lightbox-group` value (on the trigger or an ancestor) navigate only inside that group. A group of one image does not cycle.
 
 ---
 
@@ -233,11 +253,11 @@ Works with React, Vue, Angular, Svelte, Astro, plain HTML.
 
 ---
 
-## Changelog (1.2.0)
+## Changelog (1.3.0)
 
-- Include text-link triggers via `imageSelector`
-- Resolve mobile pinch/pan issues that caused the underlying page's zoom state
-- Add smoother iOS Safari pinch-zoom
+- `data-lightbox-group` for multiple independent galleries on one page
+- A group of one image opens alone
+- Triggers without the attribute still share one gallery
 
 Full history: `docs/CHANGELOG.md` in the package / repo.
 
@@ -286,6 +306,9 @@ Yes. MIT license.
 **Open from a text link?**  
 Yes. Use `<a href="full.jpg" data-lightbox="full.jpg">…</a>` and `init({ imageSelector: 'a[data-lightbox]' })`. Mix with images via `'img[data-lightbox], a[data-lightbox]'`. Default `init()` only matches images.
 
+**One image, or several galleries on the same page?**  
+Yes. Add `data-lightbox-group="name"` on the trigger or a parent. Matching names are one gallery; a single image in a group opens alone. Triggers without the attribute stay in the original shared gallery, so existing pages keep working. Rename the attribute with `groupAttribute` if needed.
+
 **Does pinch-zoom also zoom the web page?**  
 No (1.2.0+). While the lightbox is open, pinch/pan zooms only the lightbox image; the page behind stays put.
 
@@ -298,7 +321,7 @@ Chrome 61+, Firefox 60+, Safari 10.1+, Edge 79+.
 
 - Exports: `init`, `initLiteLight`
 - UMD global: `LiteLight`
-- Classes: `lite-light`, `lite-light-active`, `lite-light-prev`, `lite-light-next`, `lite-light-close`, `lite-light-button`, `lite-light-zooming`, `lite-light-gesture`, `lite-light-fade-in`, `lite-light-fade-out`
+- Classes: `lite-light`, `lite-light-active`, `lite-light-prev`, `lite-light-next`, `lite-light-close`, `lite-light-button`, `lite-light-zooming`, `lite-light-gesture`, `lite-light-single`, `lite-light-fade-in`, `lite-light-fade-out`
 - Default attribute: `data-lightbox`
 - Default `imageSelector`: `img[data-lightbox]` (opt in for text links)
 

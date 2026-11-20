@@ -192,6 +192,31 @@ function isApproximatelyOne(value) {
   return Math.abs(value - 1) < ZOOM_TOLERANCE;
 }
 
+function groupAttributeSelector(attributeName) {
+  const escaped = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+    ? CSS.escape(attributeName)
+    : String(attributeName).replace(/(["\\])/g, '\\$1');
+  return `[${escaped}]`;
+}
+
+// null = default gallery (no group attribute on the trigger or an ancestor).
+// A string (including "") is an explicit group. Existing markup has no group
+// attribute, so those triggers stay in one shared gallery.
+function getGroupKey(element, selector, attributeName) {
+  const owner = element.closest(selector);
+  return owner ? owner.getAttribute(attributeName) : null;
+}
+
+function collectGalleryImages(trigger, config) {
+  const attributeName = config.groupAttribute;
+  const selector = groupAttributeSelector(attributeName);
+  const groupKey = getGroupKey(trigger, selector, attributeName);
+  return Array.from(document.querySelectorAll(config.imageSelector)).filter((element) => {
+    if (!element.hasAttribute(config.imageUrlAttribute)) return false;
+    return getGroupKey(element, selector, attributeName) === groupKey;
+  });
+}
+
 // Initialize lightbox functionality
 export function initLiteLight(options = {}) {
   if (initialized) return;
@@ -205,6 +230,7 @@ export function initLiteLight(options = {}) {
     fadeAnimationDuration: options.fadeAnimationDuration || 150,
     ...options
   };
+  config.groupAttribute = config.groupAttribute || 'data-lightbox-group';
 
   if (!document.querySelector(`.${config.lightboxClass}`)) {
     createLightboxHTML(config.lightboxClass);
@@ -233,11 +259,20 @@ export function initLiteLight(options = {}) {
       e.preventDefault();
     }
 
-    const images = Array.from(document.querySelectorAll(config.imageSelector));
+    const images = collectGalleryImages(trigger, config);
     let currentIndex = images.findIndex(img => img === trigger);
+    if (currentIndex < 0) return;
     let isNavigating = false;
+    const canNavigate = images.length > 1;
+
+    function syncNavigationControls() {
+      lightbox.classList.toggle('lite-light-single', !canNavigate);
+      prevButton.hidden = !canNavigate;
+      nextButton.hidden = !canNavigate;
+    }
 
     function preloadAdjacentImages(currentIdx) {
+      if (!canNavigate) return;
       const prevIdx = (currentIdx - 1 + images.length) % images.length;
       const nextIdx = (currentIdx + 1) % images.length;
 
@@ -259,7 +294,7 @@ export function initLiteLight(options = {}) {
     }
 
     function navigateToImage(index) {
-      if (isNavigating) return;
+      if (!canNavigate || isNavigating) return;
       isNavigating = true;
 
       currentIndex = (index + images.length) % images.length;
@@ -425,10 +460,12 @@ export function initLiteLight(options = {}) {
     function handleKeyboardNav(e) {
       switch (e.key) {
         case 'ArrowLeft':
+          if (!canNavigate) break;
           performAction('prev');
           e.preventDefault();
           break;
         case 'ArrowRight':
+          if (!canNavigate) break;
           performAction('next');
           e.preventDefault();
           break;
@@ -455,7 +492,7 @@ export function initLiteLight(options = {}) {
     function handleFocusTrap(e) {
       if (e.key !== 'Tab') return;
 
-      const focusableElements = mobileMediaQuery.matches
+      const focusableElements = mobileMediaQuery.matches || !canNavigate
         ? [closeButton]
         : [closeButton, prevButton, nextButton];
 
@@ -494,7 +531,9 @@ export function initLiteLight(options = {}) {
     }
 
     function closeLightbox() {
-      lightbox.classList.remove('lite-light-active', 'lite-light-loading');
+      lightbox.classList.remove('lite-light-active', 'lite-light-loading', 'lite-light-single');
+      prevButton.hidden = false;
+      nextButton.hidden = false;
       resetZoom(lightboxImage, true);
       setImageZoomingActive(lightboxImage, false);
       clearEntranceClasses();
@@ -520,6 +559,7 @@ export function initLiteLight(options = {}) {
     const preloadedCurrent = preloadImage(currentUrl);
 
     lightbox.style.setProperty('--ll-duration', `${fadeMs}ms`);
+    syncNavigationControls();
     lightbox.classList.add('lite-light-active');
     disableBodyScroll();
     closeButton.focus();

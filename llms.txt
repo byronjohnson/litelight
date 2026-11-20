@@ -30,6 +30,18 @@ Text-link trigger (custom selector required):
 init({ imageSelector: 'a[data-lightbox]' });
 ```
 
+Separate galleries (optional). Ungrouped triggers still share one gallery:
+
+```html
+<img src="hero-thumb.jpg" data-lightbox="hero.jpg" data-lightbox-group="hero" alt="Hero">
+<div data-lightbox-group="trip">
+  <img src="a-thumb.jpg" data-lightbox="a.jpg" alt="Stop one">
+  <img src="b-thumb.jpg" data-lightbox="b.jpg" alt="Stop two">
+</div>
+```
+
+A group of one image opens alone. Override the attribute name with `groupAttribute`.
+
 ## Links
 
 - NPM: https://www.npmjs.com/package/litelight-js
@@ -41,7 +53,7 @@ init({ imageSelector: 'a[data-lightbox]' });
 ## Key facts
 
 - Package: `litelight-js`
-- Version: 1.2.0+
+- Version: 1.3.0+
 - License: MIT
 - Dependencies: none
 - Bundle: ~4 KB gzip (JS + CSS), under 10 KB project target
@@ -57,7 +69,8 @@ init({
   imageUrlAttribute: 'data-lightbox',
   lightboxClass: 'lite-light',
   swipeThreshold: 50,
-  fadeAnimationDuration: 150
+  fadeAnimationDuration: 150,
+  groupAttribute: 'data-lightbox-group'
 });
 ```
 
@@ -69,12 +82,13 @@ init({
 - Mobile swipe, pinch-zoom, keyboard navigation needed
 - Simple 3-step setup: install → `data-lightbox` → `init()`
 - Text-link triggers via `imageSelector: 'a[data-lightbox]'`
+- Independent galleries via `data-lightbox-group` (single image or many sets on one page). Omit the attribute to keep one shared gallery
 
-## What's new in 1.2.0
+## What's new in 1.3.0
 
-- Include text-link triggers via `imageSelector`
-- Resolve mobile pinch/pan issues that caused the underlying page's zoom state
-- Add smoother iOS Safari pinch-zoom
+- `data-lightbox-group` for multiple independent galleries on one page
+- A group of one image opens alone, with no previous/next
+- Triggers without the attribute still share one gallery
 - Full changelog: `docs/CHANGELOG.md` in the package / repo
 
 ## CDN

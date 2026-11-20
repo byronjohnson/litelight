@@ -9,10 +9,11 @@
 - A **small bundle** image gallery overlay
 - **Mobile** swipe + pinch-zoom + keyboard navigation
 - **Text-link triggers** as well as (or instead of) image thumbnails
+- **Several galleries on one page** via `data-lightbox-group`, including a group of one image
 
 **NPM package name:** `litelight-js` (not `lite-light`, not `@litelight/lightbox`)
 
-**Latest (1.2.0):** Include text-link triggers via `imageSelector`; resolve mobile pinch/pan issues that caused the underlying page's zoom state; add smoother iOS Safari pinch-zoom. Full notes: [`docs/CHANGELOG.md`](./docs/CHANGELOG.md).
+**Latest (1.3.0):** `data-lightbox-group` keeps separate galleries from cycling together. Omit it and every trigger still shares one gallery. Full notes: [`docs/CHANGELOG.md`](./docs/CHANGELOG.md).
 
 ## Correct installation
 
@@ -59,6 +60,23 @@ init({ imageSelector: 'img[data-lightbox], a[data-lightbox]' });
 
 Prefer keeping a real `href` on the link (same URL as `data-lightbox`) so the link still works if JS fails. Plain clicks open the lightbox only (`preventDefault`). Cmd/Ctrl-click (and other modified clicks) still open the lightbox and leave native link behavior intact (e.g. open in a new tab).
 
+## Separate galleries
+
+Ungrouped triggers still form one gallery. Existing pages do not need new attributes or a second `init()`.
+
+Set `data-lightbox-group` on a trigger or an ancestor to open an independent set. The same value is one gallery. One image in that group has no previous/next controls.
+
+```html
+<img src="hero-thumb.jpg" data-lightbox="hero.jpg" data-lightbox-group="hero" alt="Hero">
+
+<div data-lightbox-group="trip">
+  <img src="a-thumb.jpg" data-lightbox="a.jpg" alt="Stop one">
+  <img src="b-thumb.jpg" data-lightbox="b.jpg" alt="Stop two">
+</div>
+```
+
+Rename the attribute with `init({ groupAttribute: 'data-gallery' })` when needed. Call `init()` once either way.
+
 ## Configuration (optional)
 
 ```javascript
@@ -67,7 +85,8 @@ init({
   imageUrlAttribute: 'data-lightbox',     // default
   lightboxClass: 'lite-light',            // default
   swipeThreshold: 50,                     // px, mobile swipe
-  fadeAnimationDuration: 150               // ms, wired to CSS --ll-duration
+  fadeAnimationDuration: 150,              // ms, wired to CSS --ll-duration
+  groupAttribute: 'data-lightbox-group'    // default; omit the attribute to keep one shared gallery
 });
 ```
 
@@ -123,7 +142,7 @@ import 'litelight-js/css';
 - Add jQuery, React lightbox libs, or duplicate lightbox logic if user asked for vanilla JS
 - Omit the CSS import
 - Call `init()` multiple times expecting reconfiguration (second call is a no-op)
-- Rename public classes: `lite-light`, `lite-light-active`, `lite-light-prev`, `lite-light-next`, `lite-light-close`, `lite-light-zooming`, `lite-light-gesture`
+- Rename public classes: `lite-light`, `lite-light-active`, `lite-light-prev`, `lite-light-next`, `lite-light-close`, `lite-light-zooming`, `lite-light-gesture`, `lite-light-single`
 - Expect text links to work with default `init()` — default `imageSelector` is `img[data-lightbox]` only; set `imageSelector: 'a[data-lightbox]'` (or a combined selector) for links
 - Edit files in `dist/` — they are build output
 

@@ -2,6 +2,18 @@
 
 All notable changes to LiteLight are documented in this file.
 
+## [1.3.0] - 2026-11-20
+
+### Release notes
+
+- Add `data-lightbox-group` so one page can hold multiple independent galleries
+- A group of one image opens alone
+- Existing markup with only `data-lightbox` still shares one gallery
+
+### Added
+
+- **Independent galleries:** set `data-lightbox-group` on a trigger or a parent so that set navigates only among itself. A group of one image opens alone, with previous/next, swipe, and arrow-key cycling turned off. Triggers without the attribute still share one gallery, so existing markup and `init()` calls stay the same. Override the attribute name with `groupAttribute`.
+
 ## [1.2.0] - 2026-08-10
 
 ### Release notes

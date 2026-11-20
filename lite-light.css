@@ -30,6 +30,13 @@
     visibility: visible;
   }
 
+  &.lite-light-single {
+    .lite-light-prev,
+    .lite-light-next {
+      display: none;
+    }
+  }
+
   /* Loading spinner — shown only while lite-light-loading is set */
   &::after {
     border: 3px solid rgba(255, 255, 255, 0.15);

@@ -10,6 +10,13 @@ export interface LiteLightOptions {
   lightboxClass?: string;
   swipeThreshold?: number;
   fadeAnimationDuration?: number;
+  /**
+   * Attribute that names an independent gallery. Default: `'data-lightbox-group'`.
+   * Triggers with the same value (on the trigger or an ancestor) navigate only
+   * among themselves. Triggers without the attribute stay in one shared gallery.
+   * A group of one image hides prev/next.
+   */
+  groupAttribute?: string;
 }
 
 export function init(options?: LiteLightOptions): void;

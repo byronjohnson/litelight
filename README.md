@@ -14,6 +14,7 @@ A lightweight, elegant JavaScript lightbox for modern web applications. Zero dep
 - **TypeScript** — Ship-ready type definitions included
 - **Modern ES modules** — Works with bundlers, CDN, or a plain `<script>` tag
 - **Flexible triggers** — Open from thumbnail images or text links via `imageSelector`
+- **Separate galleries** — Opt in with `data-lightbox-group` so one image, or one set, does not cycle with the rest of the page
 
 ## Demo
 
@@ -60,6 +61,32 @@ init({ imageSelector: 'img[data-lightbox], a[data-lightbox]' });
 ```
 
 Keep a real `href` (usually the same URL as `data-lightbox`) for progressive enhancement. Plain clicks open the lightbox only; Cmd/Ctrl-click (and other modified clicks) still open the lightbox and leave native browser link behavior (e.g. open in a new tab).
+
+## Separate galleries
+
+Triggers with no group attribute still share one gallery. That existing markup does not need to change.
+
+To keep a single image, or a second set of images, from cycling with the others, set `data-lightbox-group` on the trigger or on a parent. Matching values form one gallery. A group of one image opens alone (no previous/next controls, no swipe or arrow-key cycling).
+
+```html
+<!-- Stays in the default gallery with every other ungrouped trigger -->
+<img src="thumb.jpg" data-lightbox="full.jpg" alt="In the main gallery">
+
+<!-- One image, isolated -->
+<img src="hero-thumb.jpg" data-lightbox="hero.jpg" data-lightbox-group="hero" alt="Hero">
+
+<!-- A second gallery. The attribute can live on a wrapper. -->
+<div data-lightbox-group="trip">
+  <img src="a-thumb.jpg" data-lightbox="a.jpg" alt="Stop one">
+  <img src="b-thumb.jpg" data-lightbox="b.jpg" alt="Stop two">
+</div>
+```
+
+`init()` is still called once. Rename the attribute with `groupAttribute` if `data-lightbox-group` is already taken:
+
+```javascript
+init({ groupAttribute: 'data-gallery' });
+```
 
 ## Installation
 
@@ -135,7 +162,8 @@ init({
     imageUrlAttribute: 'data-gallery',      // Attribute holding full-size URL
     lightboxClass: 'lite-light',              // Root overlay class name
     swipeThreshold: 75,                       // Horizontal swipe distance (px)
-    fadeAnimationDuration: 200                // Image fade duration (ms)
+    fadeAnimationDuration: 200,               // Image fade duration (ms)
+    groupAttribute: 'data-lightbox-group'     // Attribute that names an independent gallery
 });
 ```
 
@@ -146,6 +174,7 @@ init({
 | `lightboxClass` | `'lite-light'` | Root overlay class; used to detect existing DOM |
 | `swipeThreshold` | `50` | Swipe distance (px) to trigger prev/next on mobile |
 | `fadeAnimationDuration` | `150` | Image fade duration in milliseconds |
+| `groupAttribute` | `'data-lightbox-group'` | Attribute (on the trigger or an ancestor) that isolates a gallery. Omit it to keep the shared gallery |
 
 ## Theming
 
@@ -190,6 +219,12 @@ init({ fadeAnimationDuration: 200 });
 ## Changelog
 
 See [docs/CHANGELOG.md](./docs/CHANGELOG.md) for the full history.
+
+### 1.3.0
+
+- Add `data-lightbox-group` for multiple independent galleries on one page
+- A group of one image opens alone
+- Pages that only use `data-lightbox` keep the shared gallery
 
 ### 1.2.0
 

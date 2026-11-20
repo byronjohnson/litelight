@@ -2,7 +2,7 @@
 
 > **Purpose:** This document gives AI agents (and human contributors) enough context to iterate on [LiteLight](https://github.com/byronjohnson/litelight) safely and consistently. Read this before making changes.
 >
-> **Last reviewed:** 2026-08-10 · **Package version:** 1.2.0
+> **Last reviewed:** 2026-11-20 · **Package version:** 1.3.0
 
 ---
 
@@ -103,6 +103,7 @@ init(options?);
 | `lightboxClass` | `'lite-light'` | Root overlay class; also used to detect existing DOM |
 | `swipeThreshold` | `50` | Horizontal swipe distance (px) to trigger prev/next |
 | `fadeAnimationDuration` | `150` | Image fade duration (ms); sets `--ll-duration` on the overlay at open |
+| `groupAttribute` | `'data-lightbox-group'` | Attribute that names an independent gallery. Read from the trigger, or the nearest ancestor |
 
 Additional keys passed in `options` are spread into `config` but unused unless future code reads them.
 
@@ -139,12 +140,12 @@ init({ imageSelector: 'a[data-lightbox]' });
 On click, LiteLight:
 
 1. Resolves the trigger with `event.target.closest(imageSelector)`
-2. Queries all elements matching `imageSelector`
+2. Collects matching triggers in the same group (see below)
 3. Finds the clicked trigger's index in that list
 4. Opens the lightbox showing the URL from `imageUrlAttribute`
-5. Wraps navigation (prev/next) within that matched set
+5. Wraps navigation (prev/next) within that set. A set of one image hides prev/next and ignores swipe and arrow-key cycling
 
-**Gallery grouping:** All elements matching `imageSelector` on the page form one gallery. There is no per-group API (e.g. `data-lightbox-group`) — use different `imageSelector` values via separate `init` calls only if you refactor init (not supported today; single init only).
+**Gallery grouping:** Triggers with no `data-lightbox-group` on themselves or an ancestor form one gallery. That is the original behavior, so existing markup needs no edit. A shared group value (on the trigger, which wins, or on an ancestor) is a separate gallery. `lite-light-single` is added on the overlay when that set has one image. `init()` is still once; `groupAttribute` renames the attribute.
 
 ---
 
@@ -290,14 +291,14 @@ npm run clean    # rm -rf dist
 
 ### Outputs
 
-| File | Format | Size (approx, 1.2.0) |
+| File | Format | Size (approx, 1.3.0) |
 |---|---|---|
-| `dist/lite-light.min.js` | ES modules (`export { init, initLiteLight }`) | ~10.9 KB / **3.1 KB gzip** |
-| `dist/lite-light.umd.min.js` | UMD global `LiteLight` | ~8.8 KB / **3.0 KB gzip** |
-| `dist/lite-light.min.css` | Minified CSS | ~3.9 KB / **1.2 KB gzip** |
-| `dist/lite-light.d.ts` | TypeScript definitions | ~300 B |
+| `dist/lite-light.min.js` | ES modules (`export { init, initLiteLight }`) | 11.65 KB / **3.38 KB gzip** |
+| `dist/lite-light.umd.min.js` | UMD global `LiteLight` | 9.40 KB / **3.19 KB gzip** |
+| `dist/lite-light.min.css` | Minified CSS | 3.95 KB / **1.22 KB gzip** |
+| `dist/lite-light.d.ts` | TypeScript definitions | 0.94 KB |
 
-**ESM + CSS combined:** ~**4.3 KB gzip** (still under the 10 KB project target). Build logs raw + gzip sizes on every `npm run build`.
+**ESM + CSS combined:** **4.6 KB gzip** (still under the 10 KB project target). Build logs raw + gzip sizes on every `npm run build`.
 
 Vite lib entry: `lite-light.js`. CSS is **not** imported from JS — a custom Vite plugin reads `lite-light.css` and emits the minified asset during `generateBundle`.
 
@@ -397,7 +398,7 @@ Agents should be aware of these documented inconsistencies:
 | **Vite warnings** | `build.lib.formats` ignored when `rollupOptions.output` is set | Simplify vite config |
 | **No `destroy()` API** | Cannot reconfigure after init; listeners permanent | Add `destroy()` if hot-reload or SPA re-mount needed |
 | **Overlapping sessions** | Clicking a second image while open may stack listeners | Close existing session before opening new one |
-| **Single global gallery model** | No native support for multiple independent galleries on one page | Extend with group attribute or multiple instances |
+| **One shared gallery by default** | Triggers without `data-lightbox-group` still navigate as one set (1.3.0) | Set the attribute to isolate a set |
 | **No tests** | Regression risk on touch/zoom/scroll logic | Add Playwright or Vitest + jsdom tests for core flows |
 | **Bundle size vs 1.0.x** | 1.1.0 ESM+CSS ~4.2 KB gzip vs ~3.5 KB in 1.0.5 (aesthetic CSS + transition helpers) | Optional: trim legacy keyframe CSS in a future major |
 
@@ -421,14 +422,13 @@ Features requiring modern APIs:
 
 Safe directions aligned with project goals:
 
-1. **Grouped galleries** — `data-lightbox-group="vacation"` scopes navigation sets
-2. **Caption support** — read `alt` or `data-caption`, render below image
-3. **Programmatic API** — `open(index)`, `close()`, `destroy()`, event hooks (`onOpen`, `onClose`)
-4. **CSS variables** — overlay color, animation duration, radius (shipped in 1.1.0; max zoom still JS-only)
-5. **Video / iframe support** — optional content types (careful with size budget)
-6. **TypeScript source** — optional migration; keep dist as JS for consumers
-7. **Visual regression tests** — lightweight Playwright screenshots
-8. **Dual publish** — npmjs.org + GitHub Packages in CI
+1. **Caption support** — read `alt` or `data-caption`, render below image
+2. **Programmatic API** — `open(index)`, `close()`, `destroy()`, event hooks (`onOpen`, `onClose`)
+3. **CSS variables** — overlay color, animation duration, radius (shipped in 1.1.0; max zoom still JS-only)
+4. **Video / iframe support** — optional content types (careful with size budget)
+5. **TypeScript source** — optional migration; keep dist as JS for consumers
+6. **Visual regression tests** — lightweight Playwright screenshots
+7. **Dual publish** — npmjs.org + GitHub Packages in CI
 
 Avoid:
 

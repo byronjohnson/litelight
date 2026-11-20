@@ -30,7 +30,7 @@ These are load-bearing for existing integrations. Treat them as frozen:
 | Named exports `init` **and** `initLiteLight` | Both are imported in the wild; `init` is the alias. Keep both. |
 | UMD global `LiteLight` | Script-tag users depend on the global name. |
 | Data-attribute API (`data-lightbox`) and default `imageSelector` | HTML authored by users. |
-| Config option **names** and defaults (`imageSelector`, `imageUrlAttribute`, `lightboxClass`, `swipeThreshold`, `fadeAnimationDuration`) | Passed by users at `init()`. |
+| Config option **names** and defaults (`imageSelector`, `imageUrlAttribute`, `lightboxClass`, `swipeThreshold`, `fadeAnimationDuration`, `groupAttribute`) | Passed by users at `init()`. `groupAttribute` defaults to `data-lightbox-group` and is opt-in: markup without it stays one gallery. |
 | CSS class names (`lite-light`, `lite-light-active`, `lite-light-prev/next/close`, `lite-light-button`, `lite-light-arrow`, `lite-light-fade-in/out`, `lite-light-bar`) | Integrators target these to restyle. |
 | Injected DOM structure (roles, `aria-*`, element order) | Integrators may query/style it. |
 | Package `exports` map, file names in `dist/`, and `./css` subpath | Bundlers + CDN links resolve these exact paths. |

@@ -149,7 +149,7 @@ On click, LiteLight:
 
 **Gallery grouping:** Triggers with no `data-lightbox-group` on themselves or an ancestor form one gallery. That is the original behavior, so existing markup needs no edit. A shared group value (on the trigger, which wins, or on an ancestor) is a separate gallery. `lite-light-single` is added on the overlay when that set has one image. `init()` is still once; `groupAttribute` renames the attribute.
 
-**Single thumbnail:** `applyCoverGalleries()` runs once at `init()`. A set opts in when `data-lightbox-cover` is on a common ancestor or on each trigger. One trigger stays visible (`data-lightbox-thumb`, or the first). Other triggers, and a parent that contains only that trigger, get `hidden` and `lite-light-collapsed`. `collectGalleryImages()` still includes them. Triggers added after `init()` are not hidden.
+**Single thumbnail (1.4.0):** `applyCoverGalleries()` runs once at `init()`, after the group/cover/thumb defaults are set. If `document.querySelector` finds no cover attribute, the pass returns immediately. A set opts in when `data-lightbox-cover` is on a common ancestor (`parentElement.closest`, so the attribute on the trigger itself is not treated as its ancestor) or on the trigger when no ancestor has it. Triggers that only have the attribute on themselves share a set by group key. One trigger stays visible: the first with `data-lightbox-thumb`, otherwise the first in DOM order. Other triggers, and a parent that contains exactly one matching trigger, does not contain the thumbnail, and is not the cover element, get `hidden` and `lite-light-collapsed` (`display: none !important`, so a page rule like `img { display: block }` cannot reveal them). `collectGalleryImages()` still includes the hidden triggers, so prev/next, swipe, and arrow keys cycle them. Triggers added after `init()` are not hidden. Pair the set with `data-lightbox-group` when other page images should stay out of it.
 
 ---
 
@@ -266,6 +266,8 @@ File: `lite-light.css` — uses **native CSS nesting** (`&` syntax). Processed a
 | `.lite-light-entering` / `-entered` | Scale-in entrance on open (internal) |
 | `.lite-light-zooming` | Active pinch/pan on image; disables transform transition + `will-change` |
 | `.lite-light-gesture` | Active pinch/pan on overlay; drops `backdrop-filter` during gesture |
+| `.lite-light-single` | Overlay class when the open set has one image; hides prev/next |
+| `.lite-light-collapsed` | Public class on a hidden cover-gallery trigger (or its sole parent). `display: none !important`. Do not rename |
 | `.lite-light-no-transform-transition` | Instant transform reset (internal) |
 | `.lite-light::after` | Loading spinner (visible only when `.lite-light-loading`) |
 
@@ -295,14 +297,14 @@ npm run clean    # rm -rf dist
 
 ### Outputs
 
-| File | Format | Size (approx, 1.3.0) |
+| File | Format | Size (1.4.0, measured) |
 |---|---|---|
-| `dist/lite-light.min.js` | ES modules (`export { init, initLiteLight }`) | 11.65 KB / **3.38 KB gzip** |
-| `dist/lite-light.umd.min.js` | UMD global `LiteLight` | 9.40 KB / **3.19 KB gzip** |
-| `dist/lite-light.min.css` | Minified CSS | 3.95 KB / **1.22 KB gzip** |
-| `dist/lite-light.d.ts` | TypeScript definitions | 0.94 KB |
+| `dist/lite-light.min.js` | ES modules (`export { init, initLiteLight }`) | 12.94 KB / **3.74 KB gzip** |
+| `dist/lite-light.umd.min.js` | UMD global `LiteLight` | 10.39 KB / **3.51 KB gzip** |
+| `dist/lite-light.min.css` | Minified CSS | 4.00 KB / **1.23 KB gzip** |
+| `dist/lite-light.d.ts` | TypeScript definitions | 1.59 KB |
 
-**ESM + CSS combined:** **4.6 KB gzip** (still under the 10 KB project target). Build logs raw + gzip sizes on every `npm run build`.
+**ESM + CSS combined:** **4.97 KB gzip** (still under the 10 KB project target). Build logs raw + gzip sizes on every `npm run build`. Re-measure after the next source change; do not keep these numbers if the build output changes.
 
 Vite lib entry: `lite-light.js`. CSS is **not** imported from JS — a custom Vite plugin reads `lite-light.css` and emits the minified asset during `generateBundle`.
 
@@ -325,12 +327,10 @@ Vite lib entry: `lite-light.js`. CSS is **not** imported from JS — a custom Vi
 
 ### NPM / GitHub Packages
 
-- **Trigger:** GitHub Release `published` event → `.github/workflows/publish.yml`
-- **Registry:** GitHub Packages (`npm.pkg.github.com`)
-- **Node:** 18
-- **Auth:** `GITHUB_TOKEN` with `packages: write`
-
-Public NPM (`litelight-js`) and CDN (`unpkg.com/litelight-js`) are referenced in README; confirm publish targets if changing release automation.
+- **GitHub Packages:** a published GitHub Release runs `.github/workflows/publish.yml` and publishes `@byronjohnson/litelight-js` to `npm.pkg.github.com`. Node 18. Auth is `GITHUB_TOKEN` with `packages: write`. That workflow does not publish the public `litelight-js` package.
+- **Public npm:** `npm publish` from this repo. `publishConfig.registry` is `https://registry.npmjs.org/` and `publishConfig.access` is `public`. `prepublishOnly` runs `npm run build`.
+- **Project `.npmrc`:** `registry=https://npm.pkg.github.com/byronjohnson`. Bare `npm view`, `npm whoami`, and `npm publish` without a registry flag hit GitHub Packages. Pass `--registry https://registry.npmjs.org` for the public package. `publishConfig` overrides that file for `npm publish`.
+- **1.4.0 (2026-11-21):** published to `https://www.npmjs.com/package/litelight-js` as `latest`, and tagged on GitHub at `https://github.com/byronjohnson/litelight/releases/tag/1.4.0`. The release notes were written in chat and pasted by the maintainer; do not rewrite the GitHub release unless asked.
 
 ### CDN usage (from README)
 
@@ -388,6 +388,7 @@ Manual test checklist after changes:
 - [ ] Tab focus trapped within lightbox controls
 - [ ] `prefers-reduced-motion` respected
 - [ ] Multiple galleries / re-init behavior acceptable
+- [ ] `data-lightbox-cover` leaves one trigger visible (`data-lightbox-thumb`, or the first). Hidden triggers still cycle. A page with no cover attribute is unchanged. A second `init()` does not hide triggers added later
 - [ ] ES module import and UMD `<script>` both work
 - [ ] Bundle size still reasonable
 
@@ -403,6 +404,7 @@ Agents should be aware of these documented inconsistencies:
 | **No `destroy()` API** | Cannot reconfigure after init; listeners permanent | Add `destroy()` if hot-reload or SPA re-mount needed |
 | **Overlapping sessions** | Clicking a second image while open may stack listeners | Close existing session before opening new one |
 | **One shared gallery by default** | Triggers without `data-lightbox-group` still navigate as one set (1.3.0) | Set the attribute to isolate a set |
+| **Cover hide is one shot** | `applyCoverGalleries()` runs only inside the first `init()`. Triggers inserted later stay visible and may join a later click's gallery if they match the selector (1.4.0) | Documented behavior. Do not add a mutation observer unless the maintainer asks |
 | **No tests** | Regression risk on touch/zoom/scroll logic | Add Playwright or Vitest + jsdom tests for core flows |
 | **Bundle size vs 1.0.x** | 1.1.0 ESM+CSS ~4.2 KB gzip vs ~3.5 KB in 1.0.5 (aesthetic CSS + transition helpers) | Optional: trim legacy keyframe CSS in a future major |
 

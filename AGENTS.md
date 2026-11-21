@@ -167,7 +167,7 @@ import 'litelight-js/css';
 
 ## Framework note
 
-LiteLight uses global click delegation. Call `init()` once after gallery triggers exist in the DOM (e.g. React `useEffect`, Vue `onMounted`, Svelte `onMount`).
+LiteLight uses global click delegation. Call `init()` once after gallery triggers exist in the DOM (e.g. React `useEffect`, Vue `onMounted`, Svelte `onMount`). That call also runs the `data-lightbox-cover` hide pass. Triggers added after it stay visible, and a second `init()` does nothing.
 
 ## Links
 

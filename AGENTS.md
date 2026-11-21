@@ -10,10 +10,11 @@
 - **Mobile** swipe + pinch-zoom + keyboard navigation
 - **Text-link triggers** as well as (or instead of) image thumbnails
 - **Several galleries on one page** via `data-lightbox-group`, including a group of one image
+- **One visible thumbnail** for a gallery via `data-lightbox-cover`, with the other images only inside the lightbox
 
 **NPM package name:** `litelight-js` (not `lite-light`, not `@litelight/lightbox`)
 
-**Latest (1.3.0):** `data-lightbox-group` keeps separate galleries from cycling together. Omit it and every trigger still shares one gallery. Full notes: [`docs/CHANGELOG.md`](./docs/CHANGELOG.md).
+**Latest (1.4.0):** `data-lightbox-cover` leaves one thumbnail on the page. The other images in that gallery open only inside the lightbox. `data-lightbox-thumb` chooses the visible image; otherwise the first image stays. Full notes: [`docs/CHANGELOG.md`](./docs/CHANGELOG.md).
 
 ## Correct installation
 
@@ -77,6 +78,22 @@ Set `data-lightbox-group` on a trigger or an ancestor to open an independent set
 
 Rename the attribute with `init({ groupAttribute: 'data-gallery' })` when needed. Call `init()` once either way.
 
+## Single thumbnail
+
+Optional. `data-lightbox-cover` on a wrapper, or on every trigger in the set, hides every trigger except one. Those hidden triggers stay in the DOM and still open in the lightbox. Previous/next, swipe, and arrow keys still reach them.
+
+`data-lightbox-thumb` on one trigger chooses the visible image. Without it, the first trigger in DOM order stays visible. Pair the set with `data-lightbox-group` when other images on the page should stay out of this gallery.
+
+A parent that contains only the hidden trigger (`figure`, `li`, or a card) is hidden with it. Call `init()` after the triggers exist. The hide pass runs once and does not watch for triggers added later. Pages with no cover attribute skip the pass. Rename with `coverAttribute` and `thumbAttribute` when the default names are taken.
+
+```html
+<div data-lightbox-group="cabin" data-lightbox-cover>
+  <img src="porch.jpg" data-lightbox="porch.jpg" alt="Porch" data-lightbox-thumb>
+  <img src="kitchen.jpg" data-lightbox="kitchen.jpg" alt="Kitchen">
+  <img src="loft.jpg" data-lightbox="loft.jpg" alt="Loft">
+</div>
+```
+
 ## Configuration (optional)
 
 ```javascript
@@ -86,7 +103,9 @@ init({
   lightboxClass: 'lite-light',            // default
   swipeThreshold: 50,                     // px, mobile swipe
   fadeAnimationDuration: 150,              // ms, wired to CSS --ll-duration
-  groupAttribute: 'data-lightbox-group'    // default; omit the attribute to keep one shared gallery
+  groupAttribute: 'data-lightbox-group',   // default; omit the attribute to keep one shared gallery
+  coverAttribute: 'data-lightbox-cover',   // default; omit the attribute to keep every trigger visible
+  thumbAttribute: 'data-lightbox-thumb'    // default; omit it and the first trigger in a cover gallery stays visible
 });
 ```
 
@@ -142,7 +161,7 @@ import 'litelight-js/css';
 - Add jQuery, React lightbox libs, or duplicate lightbox logic if user asked for vanilla JS
 - Omit the CSS import
 - Call `init()` multiple times expecting reconfiguration (second call is a no-op)
-- Rename public classes: `lite-light`, `lite-light-active`, `lite-light-prev`, `lite-light-next`, `lite-light-close`, `lite-light-zooming`, `lite-light-gesture`, `lite-light-single`
+- Rename public classes: `lite-light`, `lite-light-active`, `lite-light-prev`, `lite-light-next`, `lite-light-close`, `lite-light-zooming`, `lite-light-gesture`, `lite-light-single`, `lite-light-collapsed`
 - Expect text links to work with default `init()` — default `imageSelector` is `img[data-lightbox]` only; set `imageSelector: 'a[data-lightbox]'` (or a combined selector) for links
 - Edit files in `dist/` — they are build output
 

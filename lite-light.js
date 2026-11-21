@@ -217,6 +217,63 @@ function collectGalleryImages(trigger, config) {
   });
 }
 
+// Opt-in: one trigger stays on the page. The rest stay in the DOM so the
+// open lightbox can still cycle them. coverAttribute marks the gallery
+// (wrapper, or each trigger). thumbAttribute marks the visible trigger;
+// otherwise the first trigger in DOM order stays visible.
+function applyCoverGalleries(config) {
+  const coverSelector = groupAttributeSelector(config.coverAttribute);
+  if (!document.querySelector(coverSelector)) return;
+
+  const groupSelector = groupAttributeSelector(config.groupAttribute);
+  const sets = new Map();
+
+  document.querySelectorAll(config.imageSelector).forEach((el) => {
+    if (!el.hasAttribute(config.imageUrlAttribute)) return;
+
+    const cover = el.parentElement && el.parentElement.closest(coverSelector);
+    if (!cover && !el.hasAttribute(config.coverAttribute)) return;
+
+    const groupKey = getGroupKey(el, groupSelector, config.groupAttribute);
+    const scope = cover || groupKey;
+    let bucket = sets.get(scope);
+    if (!bucket) sets.set(scope, bucket = new Map());
+
+    const groupId = groupKey === null ? '\0' : groupKey;
+    let list = bucket.get(groupId);
+    if (!list) bucket.set(groupId, list = []);
+    list.push(el);
+  });
+
+  sets.forEach((bucket, scope) => {
+    const cover = scope && scope.nodeType === 1 ? scope : null;
+    bucket.forEach((list) => {
+      if (list.length < 2) return;
+      const marked = list.find((el) => el.hasAttribute(config.thumbAttribute));
+      const thumb = marked || list[0];
+      for (let i = 0; i < list.length; i++) {
+        if (list[i] !== thumb) concealCoverTrigger(list[i], thumb, cover, config.imageSelector);
+      }
+    });
+  });
+}
+
+function concealCoverTrigger(el, thumb, cover, selector) {
+  let node = el;
+  let parent = el.parentElement;
+  while (
+    parent &&
+    parent !== cover &&
+    !parent.contains(thumb) &&
+    parent.querySelectorAll(selector).length === 1
+  ) {
+    node = parent;
+    parent = parent.parentElement;
+  }
+  node.hidden = true;
+  node.classList.add('lite-light-collapsed');
+}
+
 // Initialize lightbox functionality
 export function initLiteLight(options = {}) {
   if (initialized) return;
@@ -231,6 +288,10 @@ export function initLiteLight(options = {}) {
     ...options
   };
   config.groupAttribute = config.groupAttribute || 'data-lightbox-group';
+  config.coverAttribute = config.coverAttribute || 'data-lightbox-cover';
+  config.thumbAttribute = config.thumbAttribute || 'data-lightbox-thumb';
+
+  applyCoverGalleries(config);
 
   if (!document.querySelector(`.${config.lightboxClass}`)) {
     createLightboxHTML(config.lightboxClass);

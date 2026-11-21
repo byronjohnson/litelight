@@ -2,7 +2,7 @@
 
 > **Purpose:** This document gives AI agents (and human contributors) enough context to iterate on [LiteLight](https://github.com/byronjohnson/litelight) safely and consistently. Read this before making changes.
 >
-> **Last reviewed:** 2026-11-20 · **Package version:** 1.3.0
+> **Last reviewed:** 2026-11-21 · **Package version:** 1.4.0
 
 ---
 
@@ -104,6 +104,8 @@ init(options?);
 | `swipeThreshold` | `50` | Horizontal swipe distance (px) to trigger prev/next |
 | `fadeAnimationDuration` | `150` | Image fade duration (ms); sets `--ll-duration` on the overlay at open |
 | `groupAttribute` | `'data-lightbox-group'` | Attribute that names an independent gallery. Read from the trigger, or the nearest ancestor |
+| `coverAttribute` | `'data-lightbox-cover'` | Opt-in attribute (wrapper or each trigger) that hides every trigger except one. Hidden triggers still cycle in the lightbox |
+| `thumbAttribute` | `'data-lightbox-thumb'` | Marks the visible trigger in a cover gallery. First trigger in DOM order when absent |
 
 Additional keys passed in `options` are spread into `config` but unused unless future code reads them.
 
@@ -146,6 +148,8 @@ On click, LiteLight:
 5. Wraps navigation (prev/next) within that set. A set of one image hides prev/next and ignores swipe and arrow-key cycling
 
 **Gallery grouping:** Triggers with no `data-lightbox-group` on themselves or an ancestor form one gallery. That is the original behavior, so existing markup needs no edit. A shared group value (on the trigger, which wins, or on an ancestor) is a separate gallery. `lite-light-single` is added on the overlay when that set has one image. `init()` is still once; `groupAttribute` renames the attribute.
+
+**Single thumbnail:** `applyCoverGalleries()` runs once at `init()`. A set opts in when `data-lightbox-cover` is on a common ancestor or on each trigger. One trigger stays visible (`data-lightbox-thumb`, or the first). Other triggers, and a parent that contains only that trigger, get `hidden` and `lite-light-collapsed`. `collectGalleryImages()` still includes them. Triggers added after `init()` are not hidden.
 
 ---
 

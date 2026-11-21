@@ -30,8 +30,8 @@ These are load-bearing for existing integrations. Treat them as frozen:
 | Named exports `init` **and** `initLiteLight` | Both are imported in the wild; `init` is the alias. Keep both. |
 | UMD global `LiteLight` | Script-tag users depend on the global name. |
 | Data-attribute API (`data-lightbox`) and default `imageSelector` | HTML authored by users. |
-| Config option **names** and defaults (`imageSelector`, `imageUrlAttribute`, `lightboxClass`, `swipeThreshold`, `fadeAnimationDuration`, `groupAttribute`) | Passed by users at `init()`. `groupAttribute` defaults to `data-lightbox-group` and is opt-in: markup without it stays one gallery. |
-| CSS class names (`lite-light`, `lite-light-active`, `lite-light-prev/next/close`, `lite-light-button`, `lite-light-arrow`, `lite-light-fade-in/out`, `lite-light-bar`) | Integrators target these to restyle. |
+| Config option **names** and defaults (`imageSelector`, `imageUrlAttribute`, `lightboxClass`, `swipeThreshold`, `fadeAnimationDuration`, `groupAttribute`, `coverAttribute`, `thumbAttribute`) | Passed by users at `init()`. `groupAttribute` defaults to `data-lightbox-group` and is opt-in: markup without it stays one gallery. `coverAttribute` / `thumbAttribute` default to `data-lightbox-cover` / `data-lightbox-thumb` and are opt-in: markup without the cover attribute leaves every trigger visible. |
+| CSS class names (`lite-light`, `lite-light-active`, `lite-light-prev/next/close`, `lite-light-button`, `lite-light-arrow`, `lite-light-fade-in/out`, `lite-light-bar`, `lite-light-collapsed`) | Integrators target these to restyle. `lite-light-collapsed` hides non-thumbnail triggers. |
 | Injected DOM structure (roles, `aria-*`, element order) | Integrators may query/style it. |
 | Package `exports` map, file names in `dist/`, and `./css` subpath | Bundlers + CDN links resolve these exact paths. |
 

@@ -1,5 +1,10 @@
 /* Lite Light - Lightweight Lightbox Utility Styles */
 
+/* Non-thumbnail triggers in a data-lightbox-cover gallery */
+.lite-light-collapsed {
+  display: none !important;
+}
+
 .lite-light {
   --ll-overlay: rgba(0, 0, 0, 0.75);
   --ll-duration: 0.15s;

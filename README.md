@@ -15,6 +15,7 @@ A lightweight, elegant JavaScript lightbox for modern web applications. Zero dep
 - **Modern ES modules** — Works with bundlers, CDN, or a plain `<script>` tag
 - **Flexible triggers** — Open from thumbnail images or text links via `imageSelector`
 - **Separate galleries** — Opt in with `data-lightbox-group` so one image, or one set, does not cycle with the rest of the page
+- **Single thumbnail** — Opt in with `data-lightbox-cover` so a gallery shows one image on the page and the rest only inside the lightbox
 
 ## Demo
 
@@ -86,6 +87,31 @@ To keep a single image, or a second set of images, from cycling with the others,
 
 ```javascript
 init({ groupAttribute: 'data-gallery' });
+```
+
+## Single thumbnail
+
+Optional. Add `data-lightbox-cover` to a gallery wrapper, or to every trigger in that set, to leave one image on the page. The other triggers are hidden. They stay in the DOM, so clicking the thumbnail still opens them in the lightbox and previous/next, swipe, and arrow keys still reach them.
+
+Mark the visible image with `data-lightbox-thumb`. Without that attribute, the first trigger in the set stays visible. Give the set its own `data-lightbox-group` when the page has other images, so this gallery does not cycle with them.
+
+A parent that contains only the hidden trigger, such as a `figure`, `li`, or card, is hidden with that trigger.
+
+```html
+<div data-lightbox-group="cabin" data-lightbox-cover>
+  <img src="porch.jpg" data-lightbox="porch.jpg" alt="Porch" data-lightbox-thumb>
+  <img src="kitchen.jpg" data-lightbox="kitchen.jpg" alt="Kitchen">
+  <img src="loft.jpg" data-lightbox="loft.jpg" alt="Loft">
+</div>
+```
+
+Call `init()` after these triggers are in the DOM. The hide pass runs once and does not watch for triggers added later. Pages with no `data-lightbox-cover` skip that pass. Rename either attribute if the default name is already taken:
+
+```javascript
+init({
+  coverAttribute: 'data-gallery-cover',
+  thumbAttribute: 'data-gallery-thumb'
+});
 ```
 
 ## Installation
@@ -163,7 +189,9 @@ init({
     lightboxClass: 'lite-light',              // Root overlay class name
     swipeThreshold: 75,                       // Horizontal swipe distance (px)
     fadeAnimationDuration: 200,               // Image fade duration (ms)
-    groupAttribute: 'data-lightbox-group'     // Attribute that names an independent gallery
+    groupAttribute: 'data-lightbox-group',    // Attribute that names an independent gallery
+    coverAttribute: 'data-lightbox-cover',    // Collapse a gallery to one visible trigger
+    thumbAttribute: 'data-lightbox-thumb'     // Which trigger stays visible in a cover gallery
 });
 ```
 
@@ -175,6 +203,8 @@ init({
 | `swipeThreshold` | `50` | Swipe distance (px) to trigger prev/next on mobile |
 | `fadeAnimationDuration` | `150` | Image fade duration in milliseconds |
 | `groupAttribute` | `'data-lightbox-group'` | Attribute (on the trigger or an ancestor) that isolates a gallery. Omit it to keep the shared gallery |
+| `coverAttribute` | `'data-lightbox-cover'` | Attribute (on a wrapper or each trigger) that shows one thumbnail and keeps the other triggers for the lightbox only |
+| `thumbAttribute` | `'data-lightbox-thumb'` | Attribute on the trigger that stays visible. The first trigger is used when none is marked |
 
 ## Theming
 
@@ -219,6 +249,13 @@ init({ fadeAnimationDuration: 200 });
 ## Changelog
 
 See [docs/CHANGELOG.md](./docs/CHANGELOG.md) for the full history.
+
+### 1.4.0
+
+- Add `data-lightbox-cover` so a gallery can show one thumbnail on the page
+- Add `data-lightbox-thumb` to choose that thumbnail; otherwise the first trigger stays visible
+- Hidden triggers still cycle inside the lightbox. A parent that only wraps a hidden trigger is hidden with it
+- Pages that do not use `data-lightbox-cover` skip the hide pass
 
 ### 1.3.0
 

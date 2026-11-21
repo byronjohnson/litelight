@@ -20,6 +20,7 @@ Allow-Training: yes
 # Zero-dependency vanilla JavaScript lightbox. Under 10 KB total.
 # Touch/swipe, pinch-zoom, keyboard nav, TypeScript types, CSS theming.
 # 3-step setup: npm install → data-lightbox on img (or a[data-lightbox] with custom imageSelector) → init()
+# 1.4.0: data-lightbox-cover leaves one thumbnail on the page; other triggers in that gallery stay in the DOM and open only inside the lightbox. data-lightbox-thumb picks the visible trigger (default: the first). A parent that only wraps a hidden trigger is hidden with it. The hide pass runs once at init() and is skipped when the attribute is absent. coverAttribute and thumbAttribute rename them. Pair with data-lightbox-group so the set does not cycle with other images.
 # 1.3.0: data-lightbox-group isolates a set (one image, or many independent galleries). Omit it and triggers still share one gallery. groupAttribute renames the attribute.
 # 1.2.0: Include text-link triggers via imageSelector; resolve mobile pinch/pan issues that caused the underlying page's zoom state; add smoother iOS Safari pinch-zoom.
 # Changelog: docs/CHANGELOG.md

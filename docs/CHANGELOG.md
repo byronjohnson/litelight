@@ -2,6 +2,18 @@
 
 All notable changes to LiteLight are documented in this file.
 
+## [1.4.0] - 2026-11-21
+
+### Release notes
+
+- Add `data-lightbox-cover` so a gallery can show one thumbnail on the page
+- Add `data-lightbox-thumb` to choose that thumbnail; otherwise the first image stays
+- Pages that do not use the attribute are unchanged, and the hide pass is skipped
+
+### Added
+
+- **Single thumbnail:** set `data-lightbox-cover` on a gallery wrapper, or on each trigger in that set, to leave one image on the page. The other triggers are hidden and still cycle inside the lightbox. Mark the visible trigger with `data-lightbox-thumb`; when none is marked, the first trigger in the set stays visible. A parent that contains only that hidden trigger, such as a `figure`, `li`, or card, is hidden with it. Rename either attribute with `coverAttribute` or `thumbAttribute`. Call `init()` after the triggers are in the DOM. The hide pass runs once and does not watch for triggers added later. Pages with no cover attribute skip the pass. Pair the set with `data-lightbox-group` when it should not cycle with other images.
+
 ## [1.3.0] - 2026-11-20
 
 ### Release notes
